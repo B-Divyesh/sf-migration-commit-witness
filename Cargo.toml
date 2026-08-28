@@ -1,6 +1,6 @@
 [package]
 name = "migration-commit-witness"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Prove SQL migration commit and rollback outcomes in CI"
 license = "MIT"
@@ -29,4 +29,3 @@ tempfile = "3.21.0"
 strip = true
 lto = true
 codegen-units = 1
-

@@ -84,10 +84,13 @@ expect_after = "1"
 expect_rollback = "$before"
 ```
 
-Every invariant query must return exactly one scalar value. `$before` compares
-the rollback snapshot with the recorded baseline. PostgreSQL policies require
-`psql` on `PATH`; SQLite is embedded. Migration and rollback commands inherit
-the configured database URL environment variable.
+Every invariant query must return exactly one scalar value. Query errors never
+count as observations and fail the witness, including when both sides of a
+`$before` comparison return the same error. `$before` compares two successfully
+observed scalars. PostgreSQL policies require `psql` on `PATH`; the CLI passes
+the URL using `psql --dbname` and redacts it from retained errors. SQLite is
+embedded. Migration and rollback commands inherit the configured database URL
+environment variable.
 
 ## Safety model
 
@@ -95,8 +98,9 @@ the configured database URL environment variable.
 `test`, `ci`, `development`, or `ephemeral` **and** the caller passes
 `--confirm-test-database`. It rejects database URLs containing common
 production labels. Rollback is never inferred: both a `[rollback]` command and
-`--exercise-rollback` are required. The database URL and signing key are never
-written to evidence.
+`--exercise-rollback` are required, and the pair is validated before any query
+or migration command runs. The database URL and signing key are never written
+to evidence.
 
 Dialect checks are honest and explicit: SQLite records `quick_check` and
 foreign-key violations; PostgreSQL records server reachability and relies on

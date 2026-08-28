@@ -261,6 +261,11 @@ pub fn run_witness(options: &WitnessOptions) -> Result<(Witness, WitnessSummary)
         AppError::config(format!("invalid policy {}: {e}", options.config.display()))
     })?;
     validate_policy(&policy, options.confirm_test_database)?;
+    if options.exercise_rollback && policy.rollback.is_none() {
+        return Err(AppError::config(
+            "--exercise-rollback requires an explicit [rollback] command in the policy",
+        ));
+    }
 
     let database_url = env::var(&policy.database.url_env).map_err(|_| {
         AppError::config(format!(
@@ -307,6 +312,7 @@ pub fn run_witness(options: &WitnessOptions) -> Result<(Witness, WitnessSummary)
     let after_assertions = compare_after(&policy.invariants, &after);
 
     let mut reasons = Vec::new();
+    add_invariant_query_failures("baseline", &baseline, &mut reasons);
     if !migration.reported_success {
         reasons.push(if migration.timed_out {
             "migration command timed out".into()
@@ -321,11 +327,12 @@ pub fn run_witness(options: &WitnessOptions) -> Result<(Witness, WitnessSummary)
     add_assertion_failures("after", &after_assertions, &mut reasons);
 
     let rollback = if options.exercise_rollback {
-        let rollback_policy = policy.rollback.as_ref().ok_or_else(|| {
-            AppError::config(
-                "--exercise-rollback requires an explicit [rollback] command in the policy",
-            )
-        })?;
+        // The requested rollback was preflighted before the database URL was
+        // read or any snapshot/command could touch the target.
+        let rollback_policy = policy
+            .rollback
+            .as_ref()
+            .expect("rollback policy checked before database access");
         let command = run_command(rollback_policy)?;
         let snapshot = take_snapshot(&policy, &database_url);
         let assertions = compare_rollback(&policy.invariants, &baseline, &snapshot);
@@ -650,8 +657,18 @@ fn query_sqlite(url: &str, query: &str) -> Result<String, String> {
 
 fn query_postgres(url: &str, query: &str) -> Result<String, String> {
     let output = Command::new("psql")
-        .args(["-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", query])
-        .env("PGDATABASE", url)
+        .args([
+            "--dbname",
+            url,
+            "-X",
+            "-A",
+            "-t",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            query,
+        ])
+        .env_remove("PGDATABASE")
         .env("PGCONNECT_TIMEOUT", "10")
         .stdin(Stdio::null())
         .output()
@@ -659,7 +676,7 @@ fn query_postgres(url: &str, query: &str) -> Result<String, String> {
     if !output.status.success() {
         return Err(format!(
             "psql query failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
+            redact_database_url(String::from_utf8_lossy(&output.stderr).trim(), url)
         ));
     }
     let text = String::from_utf8_lossy(&output.stdout);
@@ -751,11 +768,27 @@ fn compare(
     let (passed, detail) = if expected == "$before" {
         match baseline {
             Some(before)
-                if before.value == observed.value
-                    && before.error.is_some() == observed.error.is_some() =>
+                if before.error.is_none()
+                    && observed.error.is_none()
+                    && before.value.is_some()
+                    && before.value == observed.value =>
             {
                 (true, "matches baseline snapshot".into())
             }
+            Some(before) if before.error.is_some() => (
+                false,
+                format!(
+                    "baseline query error: {}",
+                    before.error.as_deref().unwrap_or("unknown")
+                ),
+            ),
+            Some(_) if observed.error.is_some() => (
+                false,
+                format!(
+                    "rollback query error: {}",
+                    observed.error.as_deref().unwrap_or("unknown")
+                ),
+            ),
             Some(_) => (false, "does not match baseline snapshot".into()),
             None => (false, "baseline is unavailable".into()),
         }
@@ -792,6 +825,19 @@ fn add_snapshot_failures(label: &str, snapshot: &Snapshot, reasons: &mut Vec<Str
         if !healthy {
             reasons.push(format!("{label} dialect check failed: {}", check.name));
         }
+    }
+}
+
+fn add_invariant_query_failures(label: &str, snapshot: &Snapshot, reasons: &mut Vec<String>) {
+    for observation in snapshot
+        .invariants
+        .iter()
+        .filter(|item| item.error.is_some() || item.value.is_none())
+    {
+        reasons.push(format!(
+            "{label} invariant query failed: {}",
+            observation.name
+        ));
     }
 }
 
@@ -917,6 +963,10 @@ fn md(value: &str) -> String {
 fn redact_error(value: &str) -> String {
     let compact = value.lines().next().unwrap_or(value);
     compact.chars().take(240).collect()
+}
+
+fn redact_database_url(value: &str, database_url: &str) -> String {
+    redact_error(&value.replace(database_url, "[REDACTED DATABASE URL]"))
 }
 
 fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
