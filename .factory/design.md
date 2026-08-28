@@ -72,9 +72,11 @@ and pattern alone.
 
 ## Asset plan and provenance
 
-One original raster hero, `site/public/witness-core.webp`, will be generated
+One original raster hero, `site/public/witness-core.webp`, was generated
 with `/opt/fleet/lib/gen-image.sh` using the factory `factory-image` deployment,
-then cropped/optimized locally to WebP at no more than 300 KB. Prompt:
+visually inspected, then resized/optimized locally to a 122,462-byte WebP. The
+generation metadata is preserved in `.factory/witness-core.provenance.json`.
+Prompt:
 
 > Use case: stylized-concept. Asset type: wide landing-page evidence
 > illustration. A brutalist concrete database core in cutaway, three horizontal

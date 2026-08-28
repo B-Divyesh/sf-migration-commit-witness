@@ -67,7 +67,7 @@ fn documented_sqlite_migration_and_rollback_pass() {
 }
 
 #[test]
-fn flags_partial_outcome_when_command_reports_success() {
+fn flags_non_transactional_ddl_partial_outcome_when_command_reports_success() {
     let temp = tempfile::tempdir().unwrap();
     let database = temp.path().join("partial.db");
     Connection::open(&database).unwrap();
@@ -105,6 +105,60 @@ fn flags_partial_outcome_when_command_reports_success() {
             .unwrap()
             .contains("invariant failed")
     );
+}
+
+#[test]
+fn flags_deferred_constraint_commit_failure_hidden_by_success_status() {
+    let temp = tempfile::tempdir().unwrap();
+    let database = temp.path().join("deferred.db");
+    Connection::open(&database).unwrap();
+    let up = temp.path().join("deferred.py");
+    fs::write(
+        &up,
+        "import os,sqlite3\np=os.environ['MCW_DATABASE_URL'].removeprefix('sqlite://')\nc=sqlite3.connect(p)\nc.execute('PRAGMA foreign_keys=ON')\nc.executescript('CREATE TABLE parent(id INTEGER PRIMARY KEY); CREATE TABLE child(parent_id INTEGER, FOREIGN KEY(parent_id) REFERENCES parent(id) DEFERRABLE INITIALLY DEFERRED);')\nc.commit()\ntry:\n c.execute('BEGIN')\n c.execute('INSERT INTO child VALUES (99)')\n c.commit()\nexcept sqlite3.IntegrityError:\n c.rollback()\n# Simulate an engine that reports success after commit failed; DDL remains.\n",
+    )
+    .unwrap();
+    let policy = format!(
+        r#"version = 1
+[database]
+dialect = "sqlite"
+url_env = "MCW_DATABASE_URL"
+environment = "ci"
+[migration]
+command = ["python3", {:?}]
+[[invariants]]
+name = "all intended objects committed"
+query = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('parent','child','commit_marker')"
+expect_after = "3"
+"#,
+        up.display().to_string()
+    );
+    let policy_path = temp.path().join("mcw.toml");
+    fs::write(&policy_path, policy).unwrap();
+    let output = temp.path().join("witness");
+    let result = Command::new(binary())
+        .args([
+            "witness",
+            "--config",
+            policy_path.to_str().unwrap(),
+            "--output",
+            output.to_str().unwrap(),
+            "--confirm-test-database",
+            "--allow-unsigned",
+            "--json",
+        ])
+        .env(
+            "MCW_DATABASE_URL",
+            format!("sqlite://{}", database.display()),
+        )
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(2));
+    let witness: Value =
+        serde_json::from_slice(&fs::read(output.join("witness.json")).unwrap()).unwrap();
+    assert_eq!(witness["migration"]["reported_success"], true);
+    assert_eq!(witness["after"]["invariants"][0]["value"], "2");
+    assert_eq!(witness["after_assertions"][0]["passed"], false);
 }
 
 #[test]
