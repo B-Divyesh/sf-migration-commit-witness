@@ -29,7 +29,7 @@ The exhaustive finding map is in `.factory/polish-1.md`.
 
 ## Verification
 
-Clean clone: `/tmp/mcw-polish-clean-pnXVQP/repo`.
+Final clean clone: `/tmp/mcw-polish-final-CCB4UL/repo` at commit `e78f18b`.
 
 ```sh
 npm ci

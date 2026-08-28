@@ -11,7 +11,7 @@ Live origin: <https://migration-commit-witness.sociobot.in>
 | --- | --- | --- |
 | BLOCKING-1 | Replaced the first screen with “Prove what your SQL migration committed,” named backend migration reviewers, and made “Try it with sample data” primary. The action and explanation fit inside 390×844. | Playwright `home first screen names the job…`; [mobile screenshot](evidence/live-home-mobile.webp); live `/`. |
 | BLOCKING-2 | Added `mcw demo`, bundled SQLite config/SQL under `examples/demo/`, new-directory isolation, real before/after/rollback artifacts, `/demo/`, persistent banner, Reset demo, Start for real, and `.factory/demo.md`. | `@claim:demo-isolation`, `@claim:demo-evidence`, `@claim:demo-record-match`; [demo screenshot](evidence/live-demo-mobile.webp); live `/demo/`. |
-| BLOCKING-3 | Added 24 entries to `.factory/claims.json`. Every id appears on exactly one test, and every listed command passed from the clean clone. | Tag-count audit; clean clone `/tmp/mcw-polish-clean-pnXVQP/repo`; claim commands listed below. |
+| BLOCKING-3 | Added 24 entries to `.factory/claims.json`. Every id appears on exactly one test, and every listed command passed from the clean clone. | Tag-count audit; clean clone `/tmp/mcw-polish-final-CCB4UL/repo`; claim commands listed below. |
 | BLOCKING-4 | Added real `/demo/`, static multi-page routes, 404 response override, styled 404, route titles/canonicals, focus and polite announcements, and Back/Forward coverage. | Playwright `routes have distinct metadata…` and `unknown paths return…`; live `/does-not-exist` returned 404. |
 | BLOCKING-5 | Removed the unavailable $49 offer, checkout link, license storage, verification code, and paid terms. The free MIT CLI remains complete. | Link crawl in Playwright; `rg 'checkout|license-token|\$49' site` has no product UI match; live home has no paid CTA. |
 | HIGH-1 | Added a 53-character plain title, per-route descriptions/canonicals, OG and Twitter metadata, `share.webp` at 1200×630, and a 180×180 Apple icon. | Playwright metadata assertions on all routes; `identify` dimensions; live page source. |
@@ -119,7 +119,7 @@ The IDs below follow the report’s row order.
 
 ## Verification evidence
 
-- Clean clone: `/tmp/mcw-polish-clean-pnXVQP/repo`.
+- Final clean clone: `/tmp/mcw-polish-final-CCB4UL/repo` at commit `e78f18b`.
 - `npm ci`: passed, 0 vulnerabilities.
 - `npm test`: 13 Rust tests, 1 Vitest test, and 21 applicable Playwright tests passed; one viewport-inapplicable test skipped.
 - `npm run lint`: rustfmt and Clippy with warnings denied passed.
