@@ -105,8 +105,8 @@ function showOffline(): void {
   sessionStorage.setItem(OFFLINE_SESSION_KEY, '1');
   offlineBar.hidden = false;
 }
-async function renderConnectivity(): Promise<void> {
-  if (sessionStorage.getItem(OFFLINE_SESSION_KEY) === '1') {
+async function renderConnectivity(ignorePersisted = false): Promise<void> {
+  if (!ignorePersisted && sessionStorage.getItem(OFFLINE_SESSION_KEY) === '1') {
     offlineBar.hidden = false;
     return;
   }
@@ -123,7 +123,7 @@ async function renderConnectivity(): Promise<void> {
   if (online) sessionStorage.removeItem(OFFLINE_SESSION_KEY);
   else sessionStorage.setItem(OFFLINE_SESSION_KEY, '1');
 }
-window.addEventListener('online', () => { sessionStorage.removeItem(OFFLINE_SESSION_KEY); void renderConnectivity(); void reconcileStoredLicense(); });
+window.addEventListener('online', () => { void renderConnectivity(true); void reconcileStoredLicense(); });
 window.addEventListener('offline', showOffline);
 void renderConnectivity();
 

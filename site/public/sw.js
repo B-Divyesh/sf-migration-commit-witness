@@ -1,8 +1,21 @@
-const CACHE = 'mcw-shell-v2';
+const CACHE = 'mcw-shell-v3';
 const SHELL = ['/', '/privacy/', '/terms/', '/witness-core.webp', '/favicon.svg', '/manifest.webmanifest'];
 
+async function precacheShell() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(SHELL);
+  const assetUrls = new Set();
+  for (const page of ['/', '/privacy/', '/terms/']) {
+    const response = await cache.match(page);
+    if (!response) continue;
+    const html = await response.text();
+    for (const match of html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)) assetUrls.add(match[1]);
+  }
+  await cache.addAll([...assetUrls]);
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(precacheShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
