@@ -2,7 +2,7 @@ import './styles.css';
 import {
   LICENSE_KEY,
   VERDICT_KEY,
-  isFreshValidVerdict,
+  isFreshVerdict,
   parseCachedVerdict,
   tokenFingerprint,
   verificationUrl,
@@ -100,10 +100,32 @@ document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((button) => 
 });
 
 const offlineBar = byId('offline-bar');
-function renderConnectivity(): void { offlineBar.hidden = navigator.onLine; }
-window.addEventListener('online', () => { renderConnectivity(); void reconcileStoredLicense(); });
-window.addEventListener('offline', renderConnectivity);
-renderConnectivity();
+const OFFLINE_SESSION_KEY = 'mcw:offline';
+function showOffline(): void {
+  sessionStorage.setItem(OFFLINE_SESSION_KEY, '1');
+  offlineBar.hidden = false;
+}
+async function renderConnectivity(): Promise<void> {
+  if (sessionStorage.getItem(OFFLINE_SESSION_KEY) === '1') {
+    offlineBar.hidden = false;
+    return;
+  }
+  let online = navigator.onLine;
+  if (online) {
+    try {
+      const response = await fetch('/favicon.svg', { method: 'HEAD', cache: 'no-store' });
+      online = response.ok;
+    } catch {
+      online = false;
+    }
+  }
+  offlineBar.hidden = online;
+  if (online) sessionStorage.removeItem(OFFLINE_SESSION_KEY);
+  else sessionStorage.setItem(OFFLINE_SESSION_KEY, '1');
+}
+window.addEventListener('online', () => { sessionStorage.removeItem(OFFLINE_SESSION_KEY); void renderConnectivity(); void reconcileStoredLicense(); });
+window.addEventListener('offline', showOffline);
+void renderConnectivity();
 
 const form = byId<HTMLFormElement>('license-form');
 const tokenInput = byId<HTMLInputElement>('license-token');
@@ -119,8 +141,9 @@ function setLicenseState(state: 'locked' | 'loading' | 'unlocked' | 'error', mes
 
 async function verifyLicense(token: string, force = false): Promise<void> {
   const cached = parseCachedVerdict(localStorage.getItem(VERDICT_KEY));
-  if (!force && isFreshValidVerdict(cached, token)) {
-    setLicenseState('unlocked', 'License active. The rollout kit is ready.');
+  if (!force && cached && isFreshVerdict(cached, token)) {
+    if (cached.valid) setLicenseState('unlocked', 'License active. The rollout kit is ready.');
+    else setLicenseState('error', `License no longer active (${cached.reason.replace('_', ' ')}). You can purchase a new license above.`);
     return;
   }
   if (!navigator.onLine) {

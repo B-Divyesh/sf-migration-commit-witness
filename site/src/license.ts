@@ -28,9 +28,9 @@ export function tokenFingerprint(token: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-export function isFreshValidVerdict(cached: CachedVerdict | null, token: string, now = Date.now()): boolean {
+export function isFreshVerdict(cached: CachedVerdict | null, token: string, now = Date.now()): boolean {
   return Boolean(
-    cached?.valid &&
+    cached &&
     cached.tokenFingerprint === tokenFingerprint(token) &&
     now - cached.checkedAt < VERIFY_INTERVAL_MS,
   );
