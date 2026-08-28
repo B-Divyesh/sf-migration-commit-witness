@@ -1,0 +1,32 @@
+[package]
+name = "migration-commit-witness"
+version = "0.1.0"
+edition = "2024"
+description = "Prove SQL migration commit and rollback outcomes in CI"
+license = "MIT"
+repository = "https://github.com/B-Divyesh/sf-migration-commit-witness"
+readme = "README.md"
+keywords = ["database", "migration", "ci", "sql", "audit"]
+categories = ["command-line-utilities", "development-tools::testing"]
+
+[[bin]]
+name = "mcw"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.47", features = ["derive"] }
+hmac = "0.12.1"
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+sha2 = "0.10.9"
+toml = "0.9.5"
+
+[dev-dependencies]
+tempfile = "3.21.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+
