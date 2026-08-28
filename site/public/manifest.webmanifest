@@ -1,0 +1,9 @@
+{
+  "name": "Migration Commit Witness",
+  "short_name": "Commit witness",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121512",
+  "theme_color": "#121512",
+  "icons": []
+}

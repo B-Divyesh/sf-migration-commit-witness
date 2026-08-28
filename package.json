@@ -1,0 +1,24 @@
+{
+  "name": "migration-commit-witness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config site/vite.config.ts",
+    "build:site": "vite build --config site/vite.config.ts",
+    "build:cli": "cargo build --release",
+    "build": "npm run build:cli && npm run build:site && mkdir -p dist/bin && cp target/release/mcw dist/bin/mcw",
+    "preview": "vite preview --config site/vite.config.ts --port 4173 --strictPort",
+    "test:cli": "cargo fmt --check && cargo test --all-targets",
+    "test:site": "vitest run --config site/vitest.config.ts",
+    "test:e2e": "playwright test --config site/playwright.config.ts",
+    "test": "npm run test:cli && npm run test:site && npm run build:site && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.2",
+    "vite": "7.3.6",
+    "vitest": "3.2.7"
+  }
+}

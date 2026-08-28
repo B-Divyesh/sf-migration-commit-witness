@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#121512">
+    <meta name="description" content="Prove what your SQL migration committed, what rolled back, and which rollback claim CI actually exercised.">
+    <title>Migration Commit Witness — evidence across the commit boundary</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="offline-bar" id="offline-bar" role="status" hidden>
+      Offline copy — docs and demo still work; license verification will retry when connected.
+    </div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Migration Commit Witness home">
+        <span class="brand-mark" aria-hidden="true">M//</span>
+        <span>Commit witness</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#method">Method</a>
+        <a href="#install">Install</a>
+        <a href="#pricing">Team kit</a>
+        <a href="https://github.com/B-Divyesh/sf-migration-commit-witness">Source</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Independent commit evidence</p>
+          <h1 id="hero-title">Your migration said <em>success.</em><br>Prove what stayed.</h1>
+          <p class="lede">Run the migration you already have against a disposable database. Snapshot the facts on both sides of commit. Exercise the rollback you actually supplied. Keep the signed record.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#install">Install the CLI <span aria-hidden="true">↓</span></a>
+            <a class="button button-quiet" href="#demo">Replay a broken commit</a>
+          </div>
+          <ul class="proof-strip" aria-label="Key properties">
+            <li><strong>Local-only</strong><span>No telemetry</span></li>
+            <li><strong>2 dialects</strong><span>Named behavior</span></li>
+            <li><strong>2 formats</strong><span>JSON + Markdown</span></li>
+          </ul>
+        </div>
+        <figure class="hero-figure">
+          <div class="specimen-tag" aria-hidden="true">SPECIMEN / 001</div>
+          <img src="/witness-core.webp" width="1200" height="800" fetchpriority="high" alt="Concrete database core split by a black transaction seam, with moss on verified edges and a rust fracture stopping at commit.">
+          <figcaption><span aria-hidden="true">↳</span> A green tool status is a claim. The state across the seam is the evidence.</figcaption>
+        </figure>
+      </section>
+
+      <section class="threat" aria-labelledby="threat-title">
+        <p class="section-index">01 / failure boundary</p>
+        <div>
+          <h2 id="threat-title">Exit zero can still leave a partial state.</h2>
+          <p>Deferred constraints can fail at commit. DDL may ignore the transaction you thought contained it. Migration status and database truth can diverge at exactly the moment a release needs certainty.</p>
+        </div>
+        <div class="threat-mark" aria-label="A command can report success while an invariant fails">
+          <span>exit</span><strong>0</strong><span class="slash" aria-hidden="true">≠</span><span>proof</span>
+        </div>
+      </section>
+
+      <section class="method" id="method" aria-labelledby="method-title">
+        <div class="section-head">
+          <p class="section-index">02 / method</p>
+          <h2 id="method-title">Four observations. One portable record.</h2>
+        </div>
+        <ol class="method-steps">
+          <li><span class="step-number">01</span><div><h3>Baseline</h3><p>Query scalar schema and data invariants before anything moves.</p></div></li>
+          <li><span class="step-number">02</span><div><h3>Run yours</h3><p>Execute the existing Flyway, Liquibase, ORM, or shell command unchanged.</p></div></li>
+          <li><span class="step-number">03</span><div><h3>Witness commit</h3><p>Query again even after a failed command, so partial outcomes cannot hide.</p></div></li>
+          <li><span class="step-number">04</span><div><h3>Exercise rollback</h3><p>Only on explicit request, using only the rollback command in policy.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="demo" id="demo" aria-labelledby="demo-title">
+        <div class="section-head">
+          <p class="section-index">03 / recorded fixture</p>
+          <h2 id="demo-title">Replay a partial commit.</h2>
+          <p>This seeded run returns exit code 0 after creating only one of two required objects. Move through the same observations the CLI records.</p>
+        </div>
+        <div class="demo-shell">
+          <div class="demo-toolbar">
+            <span class="demo-file">witness.json</span>
+            <span id="demo-verdict" class="verdict verdict-neutral">Not checked</span>
+          </div>
+          <div class="stage-tabs" role="tablist" aria-label="Witness stage">
+            <button id="tab-before" role="tab" aria-selected="true" aria-controls="stage-panel" data-stage="0">1. Before</button>
+            <button id="tab-command" role="tab" aria-selected="false" aria-controls="stage-panel" data-stage="1" tabindex="-1">2. Command</button>
+            <button id="tab-after" role="tab" aria-selected="false" aria-controls="stage-panel" data-stage="2" tabindex="-1">3. After</button>
+            <button id="tab-rollback" role="tab" aria-selected="false" aria-controls="stage-panel" data-stage="3" tabindex="-1">4. Rollback</button>
+          </div>
+          <div class="demo-grid" id="stage-panel" role="tabpanel" aria-labelledby="tab-before" tabindex="0">
+            <div class="state-visual" aria-hidden="true">
+              <div class="db-slab slab-a"><span>schema</span><b id="visual-schema">0 / 2</b></div>
+              <div class="commit-seam"><span>COMMIT BOUNDARY</span></div>
+              <div class="db-slab slab-b"><span>rows</span><b id="visual-rows">12</b></div>
+            </div>
+            <div class="terminal" aria-live="polite">
+              <p class="terminal-label" id="stage-label">BASELINE / captured</p>
+              <pre id="stage-output"><code>$ mcw witness --confirm-test-database
+snapshot.before.schema_objects = 0
+snapshot.before.account_rows = 12
+sqlite.quick_check = "ok"</code></pre>
+            </div>
+          </div>
+          <div class="demo-controls">
+            <button class="button button-quiet" id="demo-prev" disabled><span aria-hidden="true">←</span> Previous</button>
+            <button class="button button-primary" id="demo-next">Run command <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+        <noscript><p class="state-notice">JavaScript is off. The CLI and docs remain usable; the recorded fixture needs JavaScript to advance.</p></noscript>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div class="section-head">
+          <p class="section-index">04 / install</p>
+          <h2 id="install-title">Boring inputs. Durable evidence.</h2>
+          <p>One Rust binary. No agent, hosted database, migration DSL, or telemetry.</p>
+        </div>
+        <div class="install-grid">
+          <div>
+            <h3>Build 0.1.0</h3>
+            <div class="code-block"><code id="install-code">cargo install --git https://github.com/B-Divyesh/sf-migration-commit-witness --bin mcw</code><button class="copy-button" data-copy="install-code">Copy install</button></div>
+            <h3>Witness in CI</h3>
+            <div class="code-block code-tall"><code id="run-code">export MCW_DATABASE_URL='sqlite:///tmp/mcw-ci.db'
+export MCW_SIGNING_KEY="$CI_WITNESS_KEY"
+
+mcw witness --config mcw.toml \
+  --output witness \
+  --confirm-test-database \
+  --exercise-rollback --json</code><button class="copy-button" data-copy="run-code">Copy command</button></div>
+            <p class="copy-status" id="copy-status" role="status"></p>
+          </div>
+          <div class="guardrail">
+            <p class="guard-label">Hard guardrail</p>
+            <h3>Production is not a mode.</h3>
+            <p>The run needs both an allowed environment label and <code>--confirm-test-database</code>. Production-like URLs are rejected. Rollback needs a configured command and a separate flag.</p>
+            <a href="https://github.com/B-Divyesh/sf-migration-commit-witness#policy-file">Read the policy reference <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="dialects" aria-labelledby="dialects-title">
+        <div class="section-head">
+          <p class="section-index">05 / dialect truth</p>
+          <h2 id="dialects-title">Specific by dialect. Never hand-waved.</h2>
+        </div>
+        <div class="table-scroll" tabindex="0" aria-label="Scrollable dialect comparison">
+          <table>
+            <thead><tr><th>Dialect</th><th>Connection</th><th>Built-in check</th><th>Your proof</th></tr></thead>
+            <tbody>
+              <tr><th>SQLite</th><td>Embedded</td><td><code>quick_check</code> + foreign keys</td><td>Scalar invariants</td></tr>
+              <tr><th>PostgreSQL</th><td><code>psql</code> on PATH</td><td>Server reachability</td><td>Scalar invariants</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pricing" id="pricing" aria-labelledby="pricing-title">
+        <div class="section-head">
+          <p class="section-index">06 / adoption</p>
+          <h2 id="pricing-title">The witness stays free. Scale the ritual once.</h2>
+          <p>Safety behavior, signatures, rollback exercise, and both evidence formats are MIT licensed. The optional kit packages team rollout policy.</p>
+        </div>
+        <div class="price-grid">
+          <article class="price-free">
+            <p class="price-label">Core CLI</p>
+            <p class="price">$0 <span>MIT</span></p>
+            <ul>
+              <li>SQLite + PostgreSQL witnesses</li>
+              <li>Signed JSON + Markdown</li>
+              <li>Explicit rollback exercise</li>
+              <li>CI-ready exit codes</li>
+            </ul>
+            <a class="button button-quiet" href="#install">Install the CLI</a>
+          </article>
+          <article class="price-team">
+            <div class="team-stamp" aria-hidden="true">TEAM</div>
+            <p class="price-label">Rollout kit</p>
+            <p class="price">$49 <span>one time</span></p>
+            <ul>
+              <li>Review-owner matrix template</li>
+              <li>Dialect policy preset pack</li>
+              <li>Adoption and exception checklist</li>
+              <li>Future kit updates for this major version</li>
+            </ul>
+            <a class="button button-primary" id="buy-link" href="https://api.sociobot.in/api/v1/products/migration-commit-witness/checkout">Buy the rollout kit <span aria-hidden="true">↗</span></a>
+            <p class="merchant-note">Secure checkout. Sociobot/Dodo is merchant of record.</p>
+          </article>
+        </div>
+        <div class="license-bench" aria-labelledby="license-title">
+          <div>
+            <p class="section-index">Already purchased?</p>
+            <h3 id="license-title">Restore the kit on this device.</h3>
+            <p>Your token stays in this browser. Verification runs at most once per day.</p>
+          </div>
+          <form id="license-form" novalidate>
+            <label for="license-token">License token</label>
+            <div class="license-row">
+              <input id="license-token" name="license" type="text" autocomplete="off" spellcheck="false" aria-describedby="license-help license-status" required>
+              <button class="button button-quiet" type="submit">Verify license</button>
+            </div>
+            <p id="license-help" class="field-help">Paste the full token from your receipt.</p>
+            <p id="license-status" class="license-status" role="status" aria-live="polite">No license stored on this device.</p>
+          </form>
+          <button class="button kit-button" id="download-kit" disabled>Download team rollout kit</button>
+        </div>
+        <p class="legal-line">One-time purchase. Refunds are handled by the merchant of record and revoke the license. See <a href="/privacy/">privacy</a> and <a href="/terms/">terms</a>.</p>
+      </section>
+
+      <section class="closing" aria-labelledby="closing-title">
+        <p class="section-index">07 / release gate</p>
+        <h2 id="closing-title">Keep the claim.<br>Keep the proof.</h2>
+        <a class="button button-primary" href="#install">Add the witness to CI</a>
+      </section>
+    </main>
+
+    <footer>
+      <p><strong>Migration Commit Witness</strong><br><span>Evidence for the dangerous boundary.</span></p>
+      <nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-migration-commit-witness">GitHub</a></nav>
+      <p class="footer-note">No telemetry. No production connections.<br>Built by the Param Factory.</p>
+    </footer>
+  </body>
+</html>
