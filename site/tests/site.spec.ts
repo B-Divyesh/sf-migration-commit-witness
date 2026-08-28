@@ -37,7 +37,7 @@ test('first load is local-only and writes no browser storage', async ({ page }) 
   page.on('request', (request) => origins.add(new URL(request.url()).origin));
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  expect([...origins]).toEqual(['http://127.0.0.1:4173']);
+  expect([...origins]).toEqual([new URL(page.url()).origin]);
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
 
