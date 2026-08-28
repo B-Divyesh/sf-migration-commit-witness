@@ -44,7 +44,7 @@ Results:
 - npm audit: 0 vulnerabilities.
 - Rust: 3 unit, 2 claim-integration, and 8 CLI integration tests passed.
 - Vitest: 1 deployment/config test passed.
-- Playwright: 21 applicable desktop/mobile tests passed; one viewport-only case skipped.
+- Playwright: 23 applicable desktop/mobile tests passed; one viewport-only case skipped.
 - Clippy passed with warnings denied.
 - Build produced `dist/bin/mcw` and `dist/site/`.
 - Cargo packaged and verified 57 files.
@@ -56,7 +56,7 @@ Live checks after deployment:
 - `/`, `/demo/`, `/privacy/`, and `/terms/`: HTTP 200.
 - `/does-not-exist`: HTTP 404 with the designed page.
 - Factory URL verifier: home and demo passed with zero console errors.
-- Full Playwright suite against the live origin: 21 passed, one viewport-only skip.
+- Full Playwright suite against the live origin: 23 passed, one viewport-only skip.
 - Axe integration: zero serious or critical findings across all routes at desktop and 390 px.
 - Offline demo reload/reset, same-origin request policy, demo namespace, focus, Back/Forward, reduced motion, and 44 px targets passed.
 - Live Lighthouse mobile: 100 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.

@@ -17,6 +17,15 @@ test('home first screen names the job, audience, and sample action', async ({ pa
   expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
+test('first home load stays same-origin and writes no browser data', async ({ page }) => {
+  const origins = new Set<string>();
+  page.on('request', (request) => origins.add(new URL(request.url()).origin));
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  expect([...origins]).toEqual([new URL(page.url()).origin]);
+  expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+});
+
 test('@claim:demo-route-isolation one click enters the demo namespace and reset clears only demo state', async ({ page }) => {
   await page.goto('/?demo=1');
   await expect(page).toHaveURL(/\/demo\/$/);
