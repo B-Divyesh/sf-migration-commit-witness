@@ -3,6 +3,9 @@
   "version": "0.1.1",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite --config site/vite.config.ts",
     "build:site": "vite build --config site/vite.config.ts",
@@ -10,6 +13,8 @@
     "generate:demo-recording": "node site/generate-demo-recording.mjs",
     "build": "npm run build:cli && npm run generate:demo-recording && npm run build:site && mkdir -p dist/bin && cp target/release/mcw dist/bin/mcw",
     "test:claim:build-artifacts": "node site/build-claim.mjs",
+    "test:claim:git-install": "node site/claim-git-install.mjs",
+    "test:claim:toolchain": "node site/claim-toolchain.mjs",
     "preview": "node site/serve.mjs",
     "typecheck": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --lib ES2022,DOM,DOM.Iterable site/src/common.ts site/src/home.ts site/src/demo.ts site/src/legal.ts",
     "lint": "cargo fmt --check && cargo clippy --all-targets --locked -- -D warnings",

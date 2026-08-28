@@ -141,10 +141,10 @@
   },
   {
     "id": "browser-demo-privacy",
-    "claim": "The browser demo requests only same-origin files and stores only demo session state.",
+    "claim": "The browser demo opens without an account, analytics service, config, or database setup; it requests only declared static product files and stores only demo session state.",
     "where": "landing, demo, privacy",
     "test": "npm run build:site && npm run test:e2e -- --grep @claim:browser-demo-privacy",
-    "sandbox": "fresh browser context with complete request and Web Storage inspection"
+    "sandbox": "fresh browser context with complete request-path, visible-login-control, and Web Storage inspection"
   },
   {
     "id": "offline-demo",
@@ -180,5 +180,47 @@
     "where": "README",
     "test": "cargo test --test cli readme_policy_fails_when_before_and_rollback_queries_both_error",
     "sandbox": "fresh SQLite fixture where the same check errors before and after rollback; assert failed witness and assertion"
+  },
+  {
+    "id": "environment-forwarding",
+    "claim": "The CLI passes the configured database URL to both migration and rollback commands while omitting it from witness files.",
+    "where": "privacy",
+    "test": "cargo test --test claims configured_database_url_reaches_migration_and_rollback_without_reaching_witness_files",
+    "sandbox": "fresh SQLite policy with child-command receipts; assert both receipts receive the URL and JSON/Markdown do not"
+  },
+  {
+    "id": "git-install",
+    "claim": "The documented cargo install --git command installs mcw from the public repository.",
+    "where": "landing, README",
+    "test": "npm run test:claim:git-install",
+    "sandbox": "fresh temporary Cargo home and install root; run the exact documented Git install command and assert mcw --version"
+  },
+  {
+    "id": "init-config",
+    "claim": "mcw init creates a non-overwriting starter config that can run a witness after its commands are supplied.",
+    "where": "README",
+    "test": "cargo test --test claims init_creates_a_parseable_non_overwriting_starter_config_that_runs_a_witness",
+    "sandbox": "fresh directory; run the documented init command, parse its TOML, provide the documented scripts, run a witness, and assert the second init refuses overwrite"
+  },
+  {
+    "id": "non-interactive-commands",
+    "claim": "The public demo, init, witness, and verify commands do not prompt for input.",
+    "where": "README",
+    "test": "cargo test --test claims every_public_subcommand_finishes_with_closed_stdin",
+    "sandbox": "fresh directory; run every public subcommand with closed stdin and a five-second timeout"
+  },
+  {
+    "id": "toolchain-compatibility",
+    "claim": "The verified build requires Rust 1.85 or later and Node 22 or later.",
+    "where": "README",
+    "test": "npm run test:claim:toolchain",
+    "sandbox": "inspect declared minimum versions, current Node and Rust versions, and Cargo metadata; CI repeats the minimum-version matrix"
+  },
+  {
+    "id": "demo-banner-persistence",
+    "claim": "The browser demo banner remains visible while a 390 px phone visitor inspects or resets sample evidence.",
+    "where": ".factory/demo.md",
+    "test": "npm run build:site && npm run test:e2e -- --grep @claim:demo-banner-persistence",
+    "sandbox": "390×844 browser context scrolls to the sample evidence, checks the whole banner stays in view, resets, and checks again"
   }
 ]

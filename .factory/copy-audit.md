@@ -1,4 +1,4 @@
-# Copy audit — polish round 1
+# Copy audit — polish round 3
 
 Audited 2026-08-28. Counts use whitespace-separated words. Code samples, navigation labels, and table cells are listed separately because they are not sentences.
 
@@ -33,6 +33,12 @@ Audited 2026-08-28. Counts use whitespace-separated words. Code samples, navigat
 | 8 | This self-hosted terminal recording comes from `mcw demo`. |
 | 9 | Run the same sample locally in one command. |
 | 20 | It creates a separate temporary folder, detects one of two required tables, restores the starting checks, and writes both witness files. |
+| 7 | Choose a test target yourself. |
+| 7 | Choose a rollback command yourself. |
+| 7 | Keep database secrets out of the witness. |
+| 7 | Keep your migration tool and review. |
+| 5 | Configure the command to run. |
+| 4 | Keep independent backups. |
 
 No landing sentence exceeds 22 words. No sentence contains a banned marketing word.
 
@@ -57,6 +63,21 @@ No added sentence exceeds 22 words or uses a banned word.
 Every prose sentence in the rewritten README is 22 words or fewer. The configuration key `[[invariants]]` remains only inside executable TOML because it is the public file format. Surrounding prose consistently says “check.”
 
 No README sentence contains a banned marketing word.
+
+## Round 3 legal and toolchain additions
+
+| Words | Sentence |
+| ---: | --- |
+| 7 | Set test database details as environment variables. |
+| 11 | The browser demo uses static product files and session state. |
+| 7 | Keep your migration tool, backups, and review steps. |
+| 10 | Choose the database, commands, and checks to record. |
+| 6 | Review every migration before release. |
+| 11 | Requirements: Rust 1.85 or later, Node 22 or later, and npm. |
+| 7 | The CI matrix verifies these minimum versions. |
+
+The README sentence formerly saying “stable Rust” now names the tested minimum.
+All new sentences remain below 22 words and contain no banned marketing wording.
 
 ## Terminology
 

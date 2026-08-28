@@ -51,12 +51,28 @@ test('@claim:demo-route-isolation one click enters the demo namespace and reset 
   expect(await page.evaluate(() => ({ real: sessionStorage.getItem('real:data'), demo: sessionStorage.getItem('demo:mcw:stage') }))).toEqual({ real: 'keep', demo: '2' });
 });
 
-test('@claim:browser-demo-privacy demo uses same-origin requests and only demo session storage', async ({ page }) => {
-  const origins = new Set<string>();
-  page.on('request', (request) => origins.add(new URL(request.url()).origin));
+test('@claim:browser-demo-privacy demo uses only declared static resources, no account or analytics path, and demo session storage', async ({ page }) => {
+  const requests: Array<{ origin: string; pathname: string; method: string }> = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    requests.push({ origin: url.origin, pathname: url.pathname, method: request.method() });
+  });
   await page.goto('/demo/');
   await page.waitForLoadState('networkidle');
-  expect([...origins]).toEqual([new URL(page.url()).origin]);
+  const ownOrigin = new URL(page.url()).origin;
+  const knownStaticPath = (pathname: string) => [
+    /^\/demo\/$/,
+    /^\/assets\/[a-zA-Z0-9._-]+$/,
+    /^\/demo-record\.json$/,
+    /^\/sw\.js$/,
+    /^\/favicon\.svg$/,
+    /^\/manifest\.webmanifest$/,
+  ].some((pattern) => pattern.test(pathname));
+  expect(requests).not.toEqual([]);
+  expect(requests.every((request) => request.origin === ownOrigin && request.method === 'GET' && knownStaticPath(request.pathname))).toBe(true);
+  expect(requests.some((request) => /analytics|beacon|auth|login|account/i.test(request.pathname))).toBe(false);
+  await expect(page.getByRole('link', { name: /sign in|log in|account/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /sign in|log in|account/i })).toHaveCount(0);
   expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: ['demo:mcw:stage'] });
 });
 
@@ -151,6 +167,21 @@ test('mobile pages have no document overflow and retain the full demo controls',
   await page.goto('/demo/');
   await expect(page.getByRole('button', { name: 'Reset demo' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Start for real' })).toBeVisible();
+});
+
+test('@claim:demo-banner-persistence mobile demo banner stays visible while inspecting and resetting sample evidence', async ({ page }) => {
+  test.skip(page.viewportSize()?.width !== 390, 'mobile project only');
+  await page.goto('/demo/');
+  await page.evaluate(() => window.scrollTo(0, 900));
+  const banner = page.locator('.demo-banner');
+  const inViewport = async () => {
+    const box = await banner.boundingBox();
+    expect(box && box.y >= 0 && box.y + box.height <= page.viewportSize()!.height).toBeTruthy();
+  };
+  await inViewport();
+  await banner.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.locator('#stage-verdict')).toHaveText('Partial commit detected');
+  await inViewport();
 });
 
 test('@claim:demo-first-result phone demo shows a real result in the first viewport', async ({ page }) => {

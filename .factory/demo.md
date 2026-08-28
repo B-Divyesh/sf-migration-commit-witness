@@ -6,7 +6,7 @@ Open <https://migration-commit-witness.sociobot.in/demo/> or add `?demo=1` to th
 
 The page opens on the detected partial commit. Its first phone view shows the
 failed `1 / 2` required-tables check and the restored `0 / 2` rollback value.
-The banner remains visible and offers **Reset demo** and **Start for real**.
+The sticky banner remains visible while the page scrolls and offers **Reset demo** and **Start for real**.
 
 The browser reads `/demo-record.json`, which is checked against a fresh `mcw demo` run. It stores only the selected step under `sessionStorage` keys prefixed with `demo:mcw:`. Reset removes that namespace. Start for real removes it before returning to installation guidance.
 

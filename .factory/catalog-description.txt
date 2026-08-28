@@ -1,1 +1,1 @@
-Prove SQL migration commits and rollbacks before release.
+Prove SQL migration commits and rollback checks before release.

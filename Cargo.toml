@@ -2,6 +2,7 @@
 name = "migration-commit-witness"
 version = "0.1.1"
 edition = "2024"
+rust-version = "1.85"
 description = "Prove SQL migration commit and rollback outcomes in CI"
 license = "MIT"
 repository = "https://github.com/B-Divyesh/sf-migration-commit-witness"

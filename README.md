@@ -108,7 +108,7 @@ With `--json`, the final result is written to stdout. Progress and errors use st
 
 ## Develop and verify
 
-Requirements: stable Rust, Node 22+, and npm.
+Requirements: Rust 1.85 or later, Node 22 or later, and npm. The CI matrix verifies these minimum versions.
 
 ```sh
 npm ci
