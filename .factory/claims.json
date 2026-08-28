@@ -159,5 +159,12 @@
     "where": "README",
     "test": "npm run test:claim:build-artifacts",
     "sandbox": "clean checkout build followed by executable and route artifact checks"
+  },
+  {
+    "id": "query-error-fails",
+    "claim": "A query error fails the run, and matching errors do not count as matching values.",
+    "where": "README",
+    "test": "cargo test --test cli readme_policy_fails_when_before_and_rollback_queries_both_error",
+    "sandbox": "fresh SQLite fixture where the same check errors before and after rollback; assert failed witness and assertion"
   }
 ]

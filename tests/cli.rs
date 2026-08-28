@@ -214,6 +214,7 @@ fn refuses_to_run_without_explicit_test_confirmation() {
 }
 
 #[test]
+/// @claim:query-error-fails
 fn readme_policy_fails_when_before_and_rollback_queries_both_error() {
     let temp = tempfile::tempdir().unwrap();
     let database = temp.path().join("query-error.db");
