@@ -119,7 +119,8 @@ The IDs below follow the report’s row order.
 
 ## Verification evidence
 
-- Final clean clone: `/tmp/mcw-polish-final-CCB4UL/repo` at commit `e78f18b`.
+- Claim-audit clone: `/tmp/mcw-polish-final-CCB4UL/repo` at commit `e78f18b`.
+- Final full-suite clone: `/tmp/mcw-final-audit-1f6Yn8/repo` at commit `7cfb30c`.
 - `npm ci`: passed, 0 vulnerabilities.
 - `npm test`: 13 Rust tests, 1 Vitest test, and 23 applicable Playwright tests passed; one viewport-inapplicable test skipped.
 - `npm run lint`: rustfmt and Clippy with warnings denied passed.
