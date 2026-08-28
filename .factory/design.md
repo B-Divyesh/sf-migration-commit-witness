@@ -91,3 +91,8 @@ Prompt:
 The image is explanatory atmosphere, not a diagram; its adjacent HTML caption
 provides the exact semantic reading. Interface icons are original CSS/Unicode
 marks and need no external asset license.
+
+The 1200×630 `share.webp` and 180×180 `apple-touch-icon.png` are local crops of
+that same original image, made with ImageMagick. They introduce no new source
+material. Round 1 keeps the concrete-and-moss direction, while reducing the
+mobile hero to the job, sample action, and three facts before any artwork.

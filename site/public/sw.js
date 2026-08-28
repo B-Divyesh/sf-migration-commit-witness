@@ -1,11 +1,11 @@
-const CACHE = 'mcw-shell-v3';
-const SHELL = ['/', '/privacy/', '/terms/', '/witness-core.webp', '/favicon.svg', '/manifest.webmanifest'];
+const CACHE = 'mcw-shell-v4';
+const SHELL = ['/', '/demo/', '/privacy/', '/terms/', '/404.html', '/demo-record.json', '/witness-core.webp', '/share.webp', '/favicon.svg', '/apple-touch-icon.png', '/manifest.webmanifest'];
 
 async function precacheShell() {
   const cache = await caches.open(CACHE);
   await cache.addAll(SHELL);
   const assetUrls = new Set();
-  for (const page of ['/', '/privacy/', '/terms/']) {
+  for (const page of ['/', '/demo/', '/privacy/', '/terms/', '/404.html']) {
     const response = await cache.match(page);
     if (!response) continue;
     const html = await response.text();
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request).then((response) => {
         if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
         return response;
-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/'))),
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/404.html'))),
     );
     return;
   }

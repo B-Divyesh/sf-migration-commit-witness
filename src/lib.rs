@@ -192,6 +192,8 @@ pub struct WitnessOptions {
     pub allow_unsigned: bool,
     pub signing_key_env: String,
     pub force: bool,
+    /// Internal direct value used only by the isolated bundled demo.
+    pub database_url_override: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -209,6 +211,124 @@ pub struct VerifySummary {
     pub ok: bool,
     pub run_id: String,
     pub algorithm: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DemoSummary {
+    pub ok: bool,
+    pub detected_status: WitnessStatus,
+    pub workspace: String,
+    pub json: String,
+    pub markdown: String,
+    pub migration_exit_code: Option<i32>,
+    pub rollback_exercised: bool,
+    pub rollback_restored: bool,
+}
+
+const DEMO_POLICY: &str = include_str!("../examples/demo/mcw.toml");
+
+/// Runs the bundled fixture through the same witness path used by CI.
+/// The caller's working directory and environment are not read or changed.
+pub fn run_demo(requested: Option<&Path>) -> Result<DemoSummary, AppError> {
+    let workspace = match requested {
+        Some(path) => path.to_path_buf(),
+        None => {
+            let stamp = now_ms();
+            env::temp_dir().join(format!("mcw-demo-{stamp}-{}", std::process::id()))
+        }
+    };
+    fs::create_dir(&workspace).map_err(|error| {
+        AppError::runtime(format!(
+            "cannot create isolated demo workspace {}: {error}; choose a new path",
+            workspace.display()
+        ))
+    })?;
+    let database = workspace.join("sample.db");
+    let connection = Connection::open(&database)
+        .map_err(|error| AppError::runtime(format!("cannot create demo database: {error}")))?;
+    connection
+        .execute(
+            "CREATE TABLE release_notes(id INTEGER PRIMARY KEY, note TEXT NOT NULL)",
+            [],
+        )
+        .and_then(|_| {
+            let transaction = connection.unchecked_transaction()?;
+            for index in 1..=12 {
+                transaction.execute(
+                    "INSERT INTO release_notes(id, note) VALUES (?1, ?2)",
+                    (index, format!("release note {index}")),
+                )?;
+            }
+            transaction.commit()
+        })
+        .map_err(|error| AppError::runtime(format!("cannot seed demo database: {error}")))?;
+    drop(connection);
+
+    fs::write(
+        workspace.join("migration.sql"),
+        include_str!("../examples/demo/migration.sql"),
+    )
+    .map_err(|error| AppError::runtime(format!("cannot copy demo migration: {error}")))?;
+    fs::write(
+        workspace.join("rollback.sql"),
+        include_str!("../examples/demo/rollback.sql"),
+    )
+    .map_err(|error| AppError::runtime(format!("cannot copy demo rollback: {error}")))?;
+    let executable = env::current_exe()
+        .map_err(|error| AppError::runtime(format!("cannot locate the mcw binary: {error}")))?;
+    let policy = DEMO_POLICY
+        .replace(
+            "__MCW_BINARY__",
+            &toml_string(&executable.display().to_string()),
+        )
+        .replace("__DEMO_DB__", &toml_string(&database.display().to_string()));
+    let config = workspace.join("mcw.toml");
+    fs::write(&config, policy)
+        .map_err(|error| AppError::runtime(format!("cannot copy demo config: {error}")))?;
+    let output = workspace.join("witness");
+    let (witness, summary) = run_witness(&WitnessOptions {
+        config,
+        output,
+        confirm_test_database: true,
+        exercise_rollback: true,
+        allow_unsigned: true,
+        signing_key_env: "MCW_DEMO_SIGNING_KEY_NOT_USED".into(),
+        force: false,
+        database_url_override: Some(format!("sqlite://{}", database.display())),
+    })?;
+    let rollback_restored = witness
+        .rollback
+        .assertions
+        .iter()
+        .all(|assertion| assertion.passed);
+    Ok(DemoSummary {
+        ok: witness.status == WitnessStatus::Failed && rollback_restored,
+        detected_status: witness.status,
+        workspace: workspace.display().to_string(),
+        json: summary.json,
+        markdown: summary.markdown,
+        migration_exit_code: witness.migration.exit_code,
+        rollback_exercised: witness.rollback.exercised,
+        rollback_restored,
+    })
+}
+
+fn toml_string(value: &str) -> String {
+    serde_json::to_string(value).expect("a path is JSON/TOML string compatible")
+}
+
+/// Internal fixture action used by `mcw demo`; hidden from normal help output.
+pub fn demo_step(action: &str, database: &Path) -> Result<(), AppError> {
+    let connection = Connection::open(database)
+        .map_err(|error| AppError::runtime(format!("cannot open demo database: {error}")))?;
+    let sql = match action {
+        "migrate" => include_str!("../examples/demo/migration.sql"),
+        "rollback" => include_str!("../examples/demo/rollback.sql"),
+        _ => return Err(AppError::config("unknown demo action")),
+    };
+    connection
+        .execute_batch(sql)
+        .map_err(|error| AppError::runtime(format!("demo {action} failed: {error}")))
 }
 
 pub const STARTER_POLICY: &str = r#"version = 1
@@ -267,12 +387,15 @@ pub fn run_witness(options: &WitnessOptions) -> Result<(Witness, WitnessSummary)
         ));
     }
 
-    let database_url = env::var(&policy.database.url_env).map_err(|_| {
-        AppError::config(format!(
-            "database URL environment variable {} is not set",
-            policy.database.url_env
-        ))
-    })?;
+    let database_url = match &options.database_url_override {
+        Some(value) => value.clone(),
+        None => env::var(&policy.database.url_env).map_err(|_| {
+            AppError::config(format!(
+                "database URL environment variable {} is not set",
+                policy.database.url_env
+            ))
+        })?,
+    };
     validate_database_url(&database_url, policy.database.dialect)?;
 
     let signing_key = match env::var(&options.signing_key_env) {
@@ -1004,13 +1127,42 @@ mod tests {
     use super::*;
 
     #[test]
+    /// @claim:url-name-guards
+    /// @claim:environment-labels
     fn production_like_urls_are_rejected() {
-        let error =
-            validate_database_url("postgres://db/production", Dialect::Postgres).unwrap_err();
-        assert_eq!(error.code, EXIT_CONFIG);
+        for marker in ["prod", "production", "primary", "live-db"] {
+            let error =
+                validate_database_url(&format!("postgres://db/test-{marker}"), Dialect::Postgres)
+                    .unwrap_err();
+            assert_eq!(error.code, EXIT_CONFIG, "marker {marker}");
+        }
+        for label in ["test", "ci", "development", "ephemeral"] {
+            let policy = Policy {
+                version: 1,
+                database: DatabasePolicy {
+                    dialect: Dialect::Sqlite,
+                    url_env: "DB".into(),
+                    environment: label.into(),
+                },
+                migration: CommandPolicy {
+                    command: vec!["true".into()],
+                    success_exit_codes: vec![0],
+                    timeout_seconds: 1,
+                },
+                rollback: None,
+                invariants: vec![InvariantPolicy {
+                    name: "one".into(),
+                    query: "SELECT 1".into(),
+                    expect_after: "1".into(),
+                    expect_rollback: None,
+                }],
+            };
+            assert!(validate_policy(&policy, true).is_ok(), "label {label}");
+        }
     }
 
     #[test]
+    /// @claim:one-value-checks
     fn scalar_query_rejects_multiple_rows() {
         let directory = tempfile::tempdir().unwrap();
         let url = format!("sqlite://{}", directory.path().join("test.db").display());
@@ -1019,6 +1171,7 @@ mod tests {
     }
 
     #[test]
+    /// @claim:signed-witness
     fn hmac_round_trip_and_tamper_detection() {
         let key = b"12345678901234567890123456789012";
         let mut witness = sample_witness();

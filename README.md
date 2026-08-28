@@ -1,35 +1,41 @@
 # Migration Commit Witness
 
-`mcw` is a CI-focused witness for backend teams reviewing SQL migrations. It
-runs your existing migration command against an explicitly confirmed disposable
-database, records selected invariants on both sides of the commit boundary, can
-exercise a rollback you supply, and emits signed JSON and readable Markdown.
-It does not generate migrations, replace your migration engine, or connect to
-production by design.
+Migration Commit Witness is a command-line tool for backend teams reviewing SQL migrations in CI.
 
-Live docs: <https://migration-commit-witness.sociobot.in>
+Run your migration on a confirmed test database. The CLI records checks before commit, after commit, and after an optional rollback. It writes JSON and Markdown.
+
+Live site and sample: <https://migration-commit-witness.sociobot.in/demo/>
 
 ## Install
 
-Build the single binary with stable Rust:
+Build the Rust CLI from source:
 
 ```sh
-cargo install --path .
-mcw --help
+cargo install --git https://github.com/B-Divyesh/sf-migration-commit-witness --bin mcw
 ```
 
-The release archive produced by `npm run build` also places the local binary at
-`dist/bin/mcw` and the deployable documentation site at `dist/site/`.
+The project is MIT licensed. Core commands do not require payment or a license token.
 
-## Usage
+## Try the isolated sample
 
-Create a starter policy, edit its commands and assertions, then run it only
-against a disposable database:
+Run the bundled partial-commit case without setup:
+
+```sh
+mcw demo
+```
+
+The command creates a new temporary folder and prints its path. It seeds SQLite, runs the real witness path, detects one missing table, exercises rollback, and writes both witness formats.
+
+The sample does not read or write the current directory. Delete the printed folder when finished.
+
+## Use your own config
+
+Create a starter config, then update its commands and checks:
 
 ```sh
 mcw init --output mcw.toml
 export MCW_DATABASE_URL='sqlite:///tmp/mcw-ci.db'
-export MCW_SIGNING_KEY='replace-with-a-CI-secret-at-least-32-bytes-long'
+export MCW_SIGNING_KEY="$CI_WITNESS_KEY"
 
 mcw witness \
   --config mcw.toml \
@@ -39,31 +45,25 @@ mcw witness \
   --json
 ```
 
-`witness/witness.json` is stable machine-readable evidence;
-`witness/witness.md` is the PR-friendly record. `--json` prints the final
-summary to stdout. All progress and errors go to stderr. No prompt is ever
-shown in CI.
+`witness.json` is for tools. `witness.md` is formatted for pull-request review.
 
-Verify an artifact later with the same secret:
+Verify the signed JSON later with the same key:
 
 ```sh
-mcw verify witness/witness.json --key-env MCW_SIGNING_KEY --json
+mcw verify witness/witness.json --json
 ```
 
-Local experiments may use `--allow-unsigned`, but CI witnesses should be
-signed. Exit codes are `0` for a passing/verified witness, `2` for a migration
-or assertion failure, `3` for unsafe/invalid configuration, and `4` for a
-runtime or artifact error.
+## Config file
 
-### Policy file
+The config names the database type, URL environment variable, migration command, rollback command, and one-value checks.
 
 ```toml
 version = 1
 
 [database]
-dialect = "sqlite"             # sqlite or postgres; behavior is labeled
-url_env = "MCW_DATABASE_URL"   # the URL is read from env and never recorded
-environment = "test"           # test, ci, development, or ephemeral only
+dialect = "sqlite"
+url_env = "MCW_DATABASE_URL"
+environment = "test"
 
 [migration]
 command = ["sh", "./migrations/up.sh"]
@@ -76,55 +76,51 @@ name = "accounts table committed"
 query = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='accounts'"
 expect_after = "1"
 expect_rollback = "$before"
-
-[[invariants]]
-name = "seed account present"
-query = "SELECT count(*) FROM accounts WHERE id = 1"
-expect_after = "1"
-expect_rollback = "$before"
 ```
 
-Every invariant query must return exactly one scalar value. Query errors never
-count as observations and fail the witness, including when both sides of a
-`$before` comparison return the same error. `$before` compares two successfully
-observed scalars. PostgreSQL policies require `psql` on `PATH`; the CLI passes
-the URL using `psql --dbname` and redacts it from retained errors. SQLite is
-embedded. Migration and rollback commands inherit the configured database URL
-environment variable.
+Each check query must return one value. A query error fails the run. Matching errors do not count as matching values.
 
-## Safety model
+SQLite uses its embedded library. It records `quick_check` and foreign-key results. PostgreSQL uses `psql --dbname` and records a connection probe.
 
-`mcw witness` refuses to start unless the policy labels the environment as
-`test`, `ci`, `development`, or `ephemeral` **and** the caller passes
-`--confirm-test-database`. It rejects database URLs containing common
-production labels. Rollback is never inferred: both a `[rollback]` command and
-`--exercise-rollback` are required, and the pair is validated before any query
-or migration command runs. The database URL and signing key are never written
-to evidence.
+## Safety checks
 
-Dialect checks are honest and explicit: SQLite records `quick_check` and
-foreign-key violations; PostgreSQL records server reachability and relies on
-the selected invariants for application-specific commit proof.
+The CLI requires two confirmations before it runs a configured command:
+
+- The config environment must be `test`, `ci`, `development`, or `ephemeral`.
+- The command must include `--confirm-test-database`.
+
+URLs containing `prod`, `production`, `primary`, or `live-db` are rejected. These name checks cannot identify every production database. Review the target yourself.
+
+Rollback requires a configured command and `--exercise-rollback`. Both are checked before any database query or command runs.
+
+Database URLs and signing keys are omitted from witness files. PostgreSQL errors redact the configured database URL.
+
+## Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| 0 | The witness passed, verification passed, or the demo completed |
+| 2 | A migration or check failed |
+| 3 | The config or safety confirmation is invalid |
+| 4 | A command, database, or artifact operation failed |
+
+With `--json`, the final result is written to stdout. Progress and errors use stderr. Commands never prompt for input.
 
 ## Develop and verify
 
 Requirements: stable Rust, Node 22+, and npm.
 
 ```sh
-npm install
+npm ci
 npm test
+npm run lint
 npm run build
-npm run dev
 ```
 
-`npm test` runs Rust unit/integration tests and site tests. The documented CLI
-example is covered end to end by an isolated SQLite fixture. To package without
-publishing, run `cargo package --allow-dirty`; registry credentials remain with
-the factory.
+The build writes the binary to `dist/bin/mcw`. It writes the static site to `dist/site/`.
 
-## Privacy and license
+## Privacy and terms
 
-The CLI is local-only and has no telemetry. The site stores a pasted Sociobot
-license and its last verification result in your browser; see `/privacy/` and
-`/terms/`. Source is MIT licensed; the optional Team rollout kit is a one-time
-purchase and does not gate witness safety, evidence export, or accessibility.
+The browser demo uses same-origin files and a `demo:` session key. The CLI omits configured secrets from witness files.
+
+See the [privacy page](https://migration-commit-witness.sociobot.in/privacy/) and [terms](https://migration-commit-witness.sociobot.in/terms/).

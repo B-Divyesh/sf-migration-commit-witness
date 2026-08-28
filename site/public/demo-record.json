@@ -1,0 +1,42 @@
+{
+  "generated_by": "mcw 0.1.1 demo",
+  "command": "mcw demo",
+  "stages": [
+    {
+      "id": "before",
+      "label": "Check the database before migration",
+      "verdict": "Starting checks recorded",
+      "status": "neutral",
+      "schema": "0 / 2",
+      "rows": "12",
+      "output": "baseline.required_tables = 0\nbaseline.existing_release_notes = 12\nbaseline.sqlite_quick_check = ok"
+    },
+    {
+      "id": "command",
+      "label": "Run the migration command",
+      "verdict": "Command returned 0",
+      "status": "pass",
+      "schema": "1 / 2",
+      "rows": "12",
+      "output": "migration.sql created accounts\nmigration.exit_code = 0\nmigration.reported_success = true"
+    },
+    {
+      "id": "after",
+      "label": "Check the database after commit",
+      "verdict": "Partial commit detected",
+      "status": "fail",
+      "schema": "1 / 2",
+      "rows": "12",
+      "output": "after.required_tables = 1\nexpected.required_tables = 2\nstatus = failed\nreason = required tables check failed"
+    },
+    {
+      "id": "rollback",
+      "label": "Check the database after rollback",
+      "verdict": "Starting checks restored",
+      "status": "pass",
+      "schema": "0 / 2",
+      "rows": "12",
+      "output": "rollback.exit_code = 0\nrollback.required_tables = 0\nrollback.existing_release_notes = 12\nrollback.matches_before = true\nartifact = unsigned demo JSON + Markdown"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+//! @claim:exit-code-contract
+
 use rusqlite::Connection;
 use serde_json::Value;
 use std::{fs, process::Command};
@@ -10,6 +12,10 @@ fn binary() -> &'static str {
 }
 
 #[test]
+/// @claim:evidence-formats
+/// @claim:rollback-exercise
+/// @claim:secret-omission
+/// @claim:json-stream-contract
 fn documented_sqlite_migration_and_rollback_pass() {
     let temp = tempfile::tempdir().unwrap();
     let database = temp.path().join("case.db");
@@ -47,11 +53,23 @@ fn documented_sqlite_migration_and_rollback_pass() {
     );
     let summary: Value = serde_json::from_slice(&result.stdout).unwrap();
     assert_eq!(summary["status"], "passed");
+    assert!(String::from_utf8_lossy(&result.stderr).contains("mcw: confirming"));
+    assert!(!String::from_utf8_lossy(&result.stdout).contains("confirm"));
     let witness: Value =
         serde_json::from_slice(&fs::read(output.join("witness.json")).unwrap()).unwrap();
     assert_eq!(witness["rollback"]["exercised"], true);
     assert_eq!(witness["rollback"]["assertions"][0]["passed"], true);
     assert!(witness["signature"]["value"].as_str().unwrap().len() == 64);
+    let markdown = fs::read_to_string(output.join("witness.md")).unwrap();
+    assert!(markdown.contains(witness["run_id"].as_str().unwrap()));
+    assert!(markdown.contains("**Status: PASS**"));
+    for secret in [
+        database.display().to_string(),
+        "12345678901234567890123456789012".into(),
+    ] {
+        assert!(!serde_json::to_string(&witness).unwrap().contains(&secret));
+        assert!(!markdown.contains(&secret));
+    }
 
     let verify = Command::new(binary())
         .args([
@@ -70,6 +88,7 @@ fn documented_sqlite_migration_and_rollback_pass() {
 }
 
 #[test]
+/// @claim:partial-commit-detection
 fn flags_non_transactional_ddl_partial_outcome_when_command_reports_success() {
     let temp = tempfile::tempdir().unwrap();
     let database = temp.path().join("partial.db");
@@ -165,6 +184,7 @@ expect_after = "3"
 }
 
 #[test]
+/// @claim:test-confirmation
 fn refuses_to_run_without_explicit_test_confirmation() {
     let temp = tempfile::tempdir().unwrap();
     let policy_path = temp.path().join("mcw.toml");
@@ -270,6 +290,7 @@ expect_rollback = "$before"
 }
 
 #[test]
+/// @claim:rollback-preflight
 fn missing_requested_rollback_is_rejected_before_migration_mutates_database() {
     let temp = tempfile::tempdir().unwrap();
     let database = temp.path().join("preflight.db");
@@ -316,6 +337,7 @@ fn missing_requested_rollback_is_rejected_before_migration_mutates_database() {
 
 #[cfg(unix)]
 #[test]
+/// @claim:postgres-psql
 fn postgres_uses_dbname_uri_without_pgdatabase() {
     let temp = tempfile::tempdir().unwrap();
     let fake_bin = temp.path().join("bin");
@@ -370,6 +392,7 @@ fn postgres_uses_dbname_uri_without_pgdatabase() {
 
 #[cfg(unix)]
 #[test]
+/// @claim:secret-redaction
 fn postgres_subprocess_errors_redact_the_complete_database_url() {
     let temp = tempfile::tempdir().unwrap();
     let fake_bin = temp.path().join("bin");

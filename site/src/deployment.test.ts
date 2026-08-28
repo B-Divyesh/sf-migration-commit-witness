@@ -6,6 +6,7 @@ describe('Azure Static Web Apps response policy', () => {
     const config = JSON.parse(readFileSync('site/public/staticwebapp.config.json', 'utf8')) as {
       globalHeaders: Record<string, string>;
       routes: Array<{ route: string; headers: Record<string, string> }>;
+      responseOverrides: Record<string, { rewrite: string; statusCode: number }>;
     };
     const route = (path: string) => config.routes.find((item) => item.route === path)?.headers['Cache-Control'];
 
@@ -14,5 +15,7 @@ describe('Azure Static Web Apps response policy', () => {
     expect(route('/sw.js')).toBe('no-cache');
     expect(config.globalHeaders['Content-Security-Policy']).toContain("default-src 'self'");
     expect(config.globalHeaders['Permissions-Policy']).toContain('payment=()');
+    expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html', statusCode: 404 });
+    expect(readFileSync('site/public/sitemap.xml', 'utf8')).toContain('/demo/');
   });
 });

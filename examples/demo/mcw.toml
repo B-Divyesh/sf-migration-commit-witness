@@ -1,0 +1,26 @@
+version = 1
+
+[database]
+dialect = "sqlite"
+url_env = "MCW_DEMO_DATABASE_URL"
+environment = "ephemeral"
+
+[migration]
+command = [__MCW_BINARY__, "demo-step", "migrate", __DEMO_DB__]
+timeout_seconds = 10
+
+[rollback]
+command = [__MCW_BINARY__, "demo-step", "rollback", __DEMO_DB__]
+timeout_seconds = 10
+
+[[invariants]]
+name = "required tables"
+query = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('accounts', 'audit_log')"
+expect_after = "2"
+expect_rollback = "$before"
+
+[[invariants]]
+name = "existing release notes"
+query = "SELECT count(*) FROM release_notes"
+expect_after = "12"
+expect_rollback = "$before"

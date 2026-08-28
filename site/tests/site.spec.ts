@@ -1,120 +1,138 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-test('home is semantic, keyboard-operable, and free of serious axe findings', async ({ page }) => {
-  const consoleErrors: string[] = [];
-  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  await page.goto('/');
-  await expect(page).toHaveTitle(/Migration Commit Witness/);
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.locator('main')).toHaveCount(1);
-  await expect(page.locator('h1')).toHaveCount(1);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your migration said');
-
-  const secondTab = page.getByRole('tab', { name: '2. Command' });
-  await page.getByRole('tab', { name: '1. Before' }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(secondTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText('Exit 0', { exact: true })).toBeVisible();
-
+const serious = async (page: Parameters<typeof AxeBuilder>[0]['page']) => {
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
-  expect(consoleErrors).toEqual([]);
-});
+  return results.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''));
+};
 
-test('skip navigation and focus treatment work from the keyboard', async ({ page }) => {
+test('home first screen names the job, audience, and sample action', async ({ page }) => {
   await page.goto('/');
-  await page.keyboard.press('Tab');
-  const skipLink = page.getByRole('link', { name: 'Skip to main content' });
-  await expect(skipLink).toBeFocused();
-  await expect(skipLink).toHaveCSS('outline-style', 'solid');
-  await page.keyboard.press('Enter');
-  await expect(page.locator('#main')).toBeFocused();
+  await expect(page).toHaveTitle('Migration Commit Witness — prove SQL migration state');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Prove what your SQL migration committed');
+  await expect(page.getByText('For backend teams reviewing migrations')).toBeVisible();
+  const action = page.getByRole('link', { name: 'Try it with sample data' });
+  await expect(action).toBeVisible();
+  const box = await action.boundingBox();
+  expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
-test('first load is local-only and writes no browser storage', async ({ page }) => {
+test('@claim:demo-route-isolation one click enters the demo namespace and reset clears only demo state', async ({ page }) => {
+  await page.goto('/?demo=1');
+  await expect(page).toHaveURL(/\/demo\/$/);
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.locator('#stage-verdict')).toHaveText('Partial commit detected');
+  expect(await page.evaluate(() => Object.keys(sessionStorage))).toEqual(['demo:mcw:stage']);
+  await page.evaluate(() => sessionStorage.setItem('real:data', 'keep'));
+  await page.getByRole('button', { name: 'Show next observation' }).click();
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  expect(await page.evaluate(() => ({ real: sessionStorage.getItem('real:data'), demo: sessionStorage.getItem('demo:mcw:stage') }))).toEqual({ real: 'keep', demo: '2' });
+});
+
+test('@claim:browser-demo-privacy demo uses same-origin requests and only demo session storage', async ({ page }) => {
   const origins = new Set<string>();
   page.on('request', (request) => origins.add(new URL(request.url()).origin));
-  await page.goto('/');
+  await page.goto('/demo/');
   await page.waitForLoadState('networkidle');
   expect([...origins]).toEqual([new URL(page.url()).origin]);
-  expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+  expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: ['demo:mcw:stage'] });
 });
 
-test('service worker updates and keeps the mobile shell available offline', async ({ page, context }) => {
-  test.skip(page.viewportSize()?.width !== 390, '390px offline/update contract');
-  await page.goto('/');
+test('@claim:offline-demo the demo reloads and resets offline after one online visit', async ({ page, context }) => {
+  await page.goto('/demo/');
   await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.ready;
     await registration.update();
-    if (!navigator.serviceWorker.controller) {
-      await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
-    }
+    if (!navigator.serviceWorker.controller) await new Promise<void>((resolve) => navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }));
   });
   await page.reload();
+  await expect(page.locator('#stage-verdict')).toHaveText('Partial commit detected');
   await context.setOffline(true);
-  await expect(page.getByText('Offline copy')).toBeVisible();
   await page.reload();
-  await expect(page).toHaveTitle(/Migration Commit Witness/);
-  await expect(page.locator('main')).toBeVisible();
-  await expect(page.getByText('Offline copy')).toBeVisible();
+  await expect(page).toHaveTitle('Demo — Migration Commit Witness');
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.locator('#stage-verdict')).toHaveText('Partial commit detected');
   await context.setOffline(false);
 });
 
-test('license return is stored, stripped, verified, and unlocks the team kit', async ({ page }) => {
-  await page.route('https://api.sociobot.in/api/v1/products/migration-commit-witness/verify?*', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, reason: 'ok', expires_at: null }) });
-  });
-  await page.goto('/?license=test-license-token#pricing');
-  await expect(page).toHaveURL(/\/#pricing$/);
-  await expect(page.getByRole('button', { name: 'Download team rollout kit' })).toBeEnabled();
-  const token = await page.evaluate(() => localStorage.getItem('sb_license:migration-commit-witness'));
-  expect(token).toBe('test-license-token');
+test('demo tabs support arrow keys and visible focus', async ({ page }) => {
+  await page.goto('/demo/');
+  const before = page.getByRole('tab', { name: '1. Before' });
+  await before.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: '2. Command' })).toBeFocused();
+  await expect(page.locator('#stage-verdict')).toHaveText('Command returned 0');
+  await expect(page.getByRole('tab', { name: '2. Command' })).toHaveCSS('outline-style', 'solid');
 });
 
-test('a fresh invalid license verdict is reused for 24 hours', async ({ page }) => {
-  let verifyRequests = 0;
-  await page.route('https://api.sociobot.in/api/v1/products/migration-commit-witness/verify?*', async (route) => {
-    verifyRequests += 1;
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, reason: 'invalid', expires_at: null }) });
-  });
+test('routes have distinct metadata, focused headings, and working back navigation', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('License token').fill('invalid-license-token');
-  await page.getByRole('button', { name: 'Verify license' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'License no longer active (invalid)' })).toBeVisible();
-  expect(verifyRequests).toBe(1);
-
-  await page.reload();
-  await expect(page.getByRole('status').filter({ hasText: 'License no longer active (invalid)' })).toBeVisible();
-  expect(verifyRequests).toBe(1);
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\/demo\/$/);
+  await expect(page).toHaveTitle('Demo — Migration Commit Witness');
+  await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href', /\/demo\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.goForward();
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
 });
 
-test('policy and inline legal links meet the 44px touch-target contract', async ({ page }) => {
-  await page.goto('/');
-  for (const link of [
-    page.getByRole('link', { name: 'Read the policy reference' }),
-    page.locator('.legal-line').getByRole('link', { name: 'privacy' }),
-    page.locator('.legal-line').getByRole('link', { name: 'terms' }),
-  ]) {
-    const box = await link.boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
-  }
+test('unknown paths return the designed 404 with a way home', async ({ page }) => {
+  const response = await page.goto('/does-not-exist');
+  expect(response?.status()).toBe(404);
+  await expect(page).toHaveTitle('Not found — Migration Commit Witness');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('This route has no witness');
+  await expect(page.getByRole('link', { name: 'Return to the home page' })).toHaveAttribute('href', '/');
 });
 
-test('legal pages have one heading and pass serious axe checks', async ({ page }) => {
-  for (const path of ['/privacy/', '/terms/']) {
+test('all routes have metadata, one h1, one main, and no serious axe findings', async ({ page }) => {
+  for (const path of ['/', '/demo/', '/privacy/', '/terms/', '/does-not-exist']) {
+    const errors: string[] = [];
+    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
     await page.goto(path);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('main')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveCount(1);
-    const results = await new AxeBuilder({ page }).analyze();
-    expect(results.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /share\.webp$/);
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/apple-touch-icon.png');
+    expect(await serious(page)).toEqual([]);
+    if (path !== '/does-not-exist') expect(errors).toEqual([]);
   }
 });
 
-test('mobile layout has no horizontal document overflow', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'mobile project only');
+test('skip link and every visible target meet keyboard and 44px geometry rules', async ({ page }) => {
   await page.goto('/');
-  const dimensions = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
-  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client + 1);
-  await expect(page.locator('a.button-primary[href="#install"]').first()).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main')).toBeFocused();
+  for (const path of ['/', '/demo/', '/privacy/', '/terms/']) {
+    await page.goto(path);
+    const undersized = await page.locator('a:visible, button:visible').evaluateAll((nodes) => nodes.map((node) => {
+      const box = node.getBoundingClientRect();
+      return { text: node.textContent?.trim(), width: box.width, height: box.height };
+    }).filter((box) => box.width < 44 || box.height < 44));
+    expect(undersized).toEqual([]);
+  }
+});
+
+test('mobile pages have no document overflow and retain the full demo controls', async ({ page }) => {
+  test.skip(page.viewportSize()?.width !== 390, 'mobile project only');
+  for (const path of ['/', '/demo/', '/privacy/', '/terms/', '/does-not-exist']) {
+    await page.goto(path);
+    const dimensions = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client + 1);
+  }
+  await page.goto('/demo/');
+  await expect(page.getByRole('button', { name: 'Reset demo' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Start for real' })).toBeVisible();
+});
+
+test('reduced motion removes meaningful transitions', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  expect(parseFloat(await page.getByRole('link', { name: 'Try it with sample data' }).evaluate((node) => getComputedStyle(node).transitionDuration))).toBeLessThan(0.001);
 });

@@ -1,0 +1,34 @@
+# Demo sandbox
+
+## Browser
+
+Open <https://migration-commit-witness.sociobot.in/demo/> or add `?demo=1` to the home URL.
+
+The page opens on the detected partial commit. The banner remains visible and offers **Reset demo** and **Start for real**.
+
+The browser reads `/demo-record.json`, which is checked against a fresh `mcw demo` run. It stores only the selected step under `sessionStorage` keys prefixed with `demo:mcw:`. Reset removes that namespace. Start for real removes it before returning to installation guidance.
+
+No real user data exists in the browser demo. No account is required.
+
+## CLI
+
+Run:
+
+```sh
+mcw demo
+```
+
+The command creates a unique directory under the operating system temporary directory. It prints that path when finished.
+
+The sample contains:
+
+- an SQLite database with 12 existing release notes;
+- a migration that returns 0 after creating `accounts` but not `audit_log`;
+- a rollback that removes `accounts`;
+- checks for the two required tables and the 12 existing rows;
+- unsigned demo JSON and Markdown witness files.
+
+The demo runs the same `run_witness` path as `mcw witness`. It is clearly marked unsigned because it has no user signing secret.
+
+Delete the printed directory to discard the sample. The CLI never reads or writes the directory where `mcw demo` was invoked.
+

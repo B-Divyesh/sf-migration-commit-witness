@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use migration_commit_witness::{
-    AppError, EXIT_WITNESS_FAILED, WitnessOptions, WitnessStatus, init_policy, run_witness,
-    verify_witness,
+    AppError, EXIT_WITNESS_FAILED, WitnessOptions, WitnessStatus, demo_step, init_policy, run_demo,
+    run_witness, verify_witness,
 };
 use serde::Serialize;
 use std::{path::PathBuf, process::ExitCode};
@@ -22,6 +22,15 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Run the bundled partial-commit sample in a new isolated directory.
+    Demo {
+        /// Use this new directory instead of creating one under the system temp directory.
+        #[arg(long)]
+        output: Option<PathBuf>,
+        /// Print the demo result as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Write a documented starter policy without overwriting existing files.
     Init {
         /// Destination for the new TOML policy.
@@ -69,14 +78,22 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+    #[command(hide = true)]
+    DemoStep {
+        #[arg(value_parser = ["migrate", "rollback"])]
+        action: String,
+        database: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let json = match &cli.command {
-        Commands::Init { json, .. }
+        Commands::Demo { json, .. }
+        | Commands::Init { json, .. }
         | Commands::Witness { json, .. }
         | Commands::Verify { json, .. } => *json,
+        Commands::DemoStep { .. } => false,
     };
     match execute(cli.command, json) {
         Ok(code) => ExitCode::from(code as u8),
@@ -97,6 +114,20 @@ fn main() -> ExitCode {
 
 fn execute(command: Commands, json: bool) -> Result<i32, AppError> {
     match command {
+        Commands::Demo { output, .. } => {
+            let summary = run_demo(output.as_deref())?;
+            if json {
+                print_json(&summary);
+            } else {
+                println!("DEMO: partial commit detected; rollback restored the starting checks.");
+                println!("Workspace: {}", summary.workspace);
+                println!("JSON: {}\nMarkdown: {}", summary.json, summary.markdown);
+                println!(
+                    "Sample data is isolated in this temporary workspace. Delete it when finished."
+                );
+            }
+            Ok(0)
+        }
         Commands::Init { output, .. } => {
             init_policy(&output)?;
             if json {
@@ -131,6 +162,7 @@ fn execute(command: Commands, json: bool) -> Result<i32, AppError> {
                 allow_unsigned,
                 signing_key_env,
                 force,
+                database_url_override: None,
             })?;
             if json {
                 print_json(&summary);
@@ -160,6 +192,10 @@ fn execute(command: Commands, json: bool) -> Result<i32, AppError> {
                     summary.run_id, summary.algorithm
                 );
             }
+            Ok(0)
+        }
+        Commands::DemoStep { action, database } => {
+            demo_step(&action, &database)?;
             Ok(0)
         }
     }

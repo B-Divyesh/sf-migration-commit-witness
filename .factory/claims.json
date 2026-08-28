@@ -1,0 +1,163 @@
+[
+  {
+    "id": "demo-isolation",
+    "claim": "mcw demo creates and uses a separate sample workspace without writing to the caller directory.",
+    "where": "landing, demo, README",
+    "test": "cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record",
+    "sandbox": "empty caller directory; explicit new demo workspace; assert caller stays empty and only bundled sample outputs exist"
+  },
+  {
+    "id": "demo-evidence",
+    "claim": "The bundled demo detects one of two required tables after a successful command and verifies rollback to the baseline.",
+    "where": "landing, demo, README",
+    "test": "cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record",
+    "sandbox": "fresh temporary SQLite demo; assert exit 0, before 0, after 1 of 2, failed witness, rollback 0"
+  },
+  {
+    "id": "demo-record-match",
+    "claim": "The browser demo displays the same values produced by the bundled CLI sample.",
+    "where": "landing, demo",
+    "test": "cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record",
+    "sandbox": "run fresh CLI demo and compare observable values with site/public/demo-record.json"
+  },
+  {
+    "id": "sqlite-builtins",
+    "claim": "SQLite runs embedded quick_check and foreign-key checks.",
+    "where": "landing, README",
+    "test": "cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record",
+    "sandbox": "fresh bundled SQLite database with no sqlite3 process; assert both built-in results"
+  },
+  {
+    "id": "evidence-formats",
+    "claim": "A run writes matching JSON and Markdown witness files.",
+    "where": "landing, README",
+    "test": "cargo test --test cli documented_sqlite_migration_and_rollback_pass",
+    "sandbox": "fresh signed SQLite run; assert both files contain the same run identity and passing status"
+  },
+  {
+    "id": "rollback-exercise",
+    "claim": "The CLI runs the configured rollback when explicitly requested and records restored checks.",
+    "where": "landing, README",
+    "test": "cargo test --test cli documented_sqlite_migration_and_rollback_pass",
+    "sandbox": "fresh SQLite fixture with explicit rollback config and flag; assert command and rollback check"
+  },
+  {
+    "id": "secret-omission",
+    "claim": "Database URLs and signing keys are omitted from witness files.",
+    "where": "landing, privacy, README",
+    "test": "cargo test --test cli documented_sqlite_migration_and_rollback_pass",
+    "sandbox": "fresh signed SQLite run with sentinels; scan JSON and Markdown"
+  },
+  {
+    "id": "signed-witness",
+    "claim": "Signed witness content verifies unchanged and fails verification after tampering.",
+    "where": "landing, README",
+    "test": "cargo test --lib hmac_round_trip_and_tamper_detection",
+    "sandbox": "in-memory witness with a 32-byte HMAC key; verify original and reject modified content"
+  },
+  {
+    "id": "partial-commit-detection",
+    "claim": "A successful migration command can still produce a failed witness when a required table is missing.",
+    "where": "landing, demo",
+    "test": "cargo test --test cli flags_non_transactional_ddl_partial_outcome_when_command_reports_success",
+    "sandbox": "fresh SQLite partial migration returning 0; assert reported success and failed check"
+  },
+  {
+    "id": "rollback-preflight",
+    "claim": "Requested rollback is rejected before mutation when no rollback command is configured.",
+    "where": "landing, README",
+    "test": "cargo test --test cli missing_requested_rollback_is_rejected_before_migration_mutates_database",
+    "sandbox": "fresh SQLite database; request rollback without config; assert no table and no witness"
+  },
+  {
+    "id": "test-confirmation",
+    "claim": "The CLI does not start a witness without --confirm-test-database.",
+    "where": "landing, README",
+    "test": "cargo test --test cli refuses_to_run_without_explicit_test_confirmation",
+    "sandbox": "fresh config without confirmation; assert exit 3 before connection"
+  },
+  {
+    "id": "url-name-guards",
+    "claim": "Database URLs containing prod, production, primary, or live-db are rejected.",
+    "where": "landing, README",
+    "test": "cargo test --lib production_like_urls_are_rejected",
+    "sandbox": "parameterized URL validator over every documented marker"
+  },
+  {
+    "id": "environment-labels",
+    "claim": "The CLI accepts test, ci, development, and ephemeral environment labels.",
+    "where": "landing, README",
+    "test": "cargo test --lib production_like_urls_are_rejected",
+    "sandbox": "parameterized policy validation over every documented allowed label"
+  },
+  {
+    "id": "one-value-checks",
+    "claim": "Each configured check must return one value.",
+    "where": "landing, README",
+    "test": "cargo test --lib scalar_query_rejects_multiple_rows",
+    "sandbox": "fresh SQLite query returning two rows; assert rejection"
+  },
+  {
+    "id": "postgres-psql",
+    "claim": "PostgreSQL checks use psql --dbname and record the connection probe.",
+    "where": "landing, README",
+    "test": "cargo test --test cli postgres_uses_dbname_uri_without_pgdatabase",
+    "sandbox": "controlled psql executable validates argv and emits one probe row"
+  },
+  {
+    "id": "secret-redaction",
+    "claim": "PostgreSQL errors redact the complete configured database URL.",
+    "where": "privacy, README",
+    "test": "cargo test --test cli postgres_subprocess_errors_redact_the_complete_database_url",
+    "sandbox": "controlled psql failure echoes a credential URL; scan JSON and Markdown"
+  },
+  {
+    "id": "mit-free-cli",
+    "claim": "The CLI is MIT licensed and core commands have no license gate.",
+    "where": "landing, terms, README",
+    "test": "cargo test --test claims core_cli_is_mit_licensed_and_has_no_license_gate",
+    "sandbox": "inspect LICENSE and public CLI help from a fresh test binary"
+  },
+  {
+    "id": "demo-route-isolation",
+    "claim": "The one-click browser demo uses a demo: session namespace and reset does not alter other session data.",
+    "where": "landing, demo, privacy",
+    "test": "npm run build:site && npm run test:e2e -- --grep @claim:demo-route-isolation",
+    "sandbox": "fresh browser context via ?demo=1; seed non-demo session data; advance and reset"
+  },
+  {
+    "id": "browser-demo-privacy",
+    "claim": "The browser demo requests only same-origin files and stores only demo session state.",
+    "where": "landing, demo, privacy",
+    "test": "npm run build:site && npm run test:e2e -- --grep @claim:browser-demo-privacy",
+    "sandbox": "fresh browser context with complete request and Web Storage inspection"
+  },
+  {
+    "id": "offline-demo",
+    "claim": "The browser demo reloads and resets offline after one online visit.",
+    "where": "landing",
+    "test": "npm run build:site && npm run test:e2e -- --grep @claim:offline-demo",
+    "sandbox": "fresh browser context; prime service worker; go offline; reload and reset sample"
+  },
+  {
+    "id": "json-stream-contract",
+    "claim": "With --json, the final result uses stdout while progress uses stderr and stdin is not read.",
+    "where": "README",
+    "test": "cargo test --test cli documented_sqlite_migration_and_rollback_pass",
+    "sandbox": "fresh SQLite fixture with closed stdin; parse stdout as JSON and assert progress on stderr"
+  },
+  {
+    "id": "exit-code-contract",
+    "claim": "The CLI uses documented exit codes 0, 2, 3, and 4.",
+    "where": "README",
+    "test": "cargo test --test cli",
+    "sandbox": "isolated integration suite covering pass, failed witness, invalid safety config, and verification/runtime error"
+  },
+  {
+    "id": "build-artifacts",
+    "claim": "The build writes a runnable CLI to dist/bin/mcw and the static site to dist/site.",
+    "where": "README",
+    "test": "npm run test:claim:build-artifacts",
+    "sandbox": "clean checkout build followed by executable and route artifact checks"
+  }
+]
