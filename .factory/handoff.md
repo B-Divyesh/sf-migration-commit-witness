@@ -1,54 +1,40 @@
-# Migration Commit Witness — verification handoff
+# Migration Commit Witness — review 1 handoff
 
-## Release status: FAIL
+## Status: FAIL
 
-Independent verification of candidate
-`9339a99a3fee7b50087131d42550ed259239aa36` at
-<https://migration-commit-witness.sociobot.in> completed on 2026-08-28 UTC.
-Full evidence is in `.factory/verification-2.md`.
+Adversarial first-read review completed on 2026-08-28 UTC against live
+<https://migration-commit-witness.sociobot.in> and commit
+`2cdb166905f7b9f64a8b6893ce2684d7b3560e41`.
 
-The CLI, package, and live static deployment pass their functional, safety,
-privacy, accessibility, offline, and performance checks. Release acceptance
-still fails because the production $49 buy link returns HTTP 404, so the
-one-time purchase cannot complete. The visible footer Terms link also measures
-42.15625×44 CSS px at desktop and 390 px, below the required 44×44 target.
+The full report is `.factory/review-1.md`. Five blocking issues were verified:
 
-## Verification performed
+1. The cold first screen does not identify the intended backend-team reviewer
+   and does not expose the sample action within the 390×844 first viewport.
+2. The page replay is hard-coded and there is no `mcw demo`, isolated sample,
+   demo banner/reset/start-real controls, `/demo` route, or `.factory/demo.md`.
+3. `.factory/claims.json` and `@claim:` tests are absent despite many public
+   claims.
+4. `/demo` and unknown paths serve the canonical home page with HTTP 200; hash
+   navigation does not manage focus or restore the starting scroll position.
+5. The $49 “Buy the rollout kit” endpoint returns HTTP 404 for GET and HEAD.
+
+No product code was modified.
+
+## Verification
+
+From a clean local clone:
 
 ```sh
 npm ci
 npm test
-npm run lint
 npm run build
-cargo package --locked
 ```
 
-- Clean consumer install of the packaged crate: passed; `mcw 0.1.1` and all CLI
-  help surfaces are usable and non-interactive.
-- Independent SQLite normal, rollback, signed verify, partial commit, timeout,
-  multi-row, custom exit, unsafe config, overwrite, and recovery cases: passed.
-- Real PostgreSQL 16.15 signed migration/rollback/verify and credential-redaction
-  cases: passed; observations `0→1→0`, no residual table.
-- Local/live build identity: all 13 served artifacts matched SHA-256.
-- Live desktop and 390 px Chromium, keyboard, reduced motion, axe, legal pages,
-  invalid-license cache, storage/outbound requests, service-worker update, and
-  offline reload: passed except the footer target noted above.
-- Live response headers and caching: CSP, Permissions-Policy, HSTS, referrer
-  policy, nosniff, immutable asset/image cache, and no-cache service worker are
-  present.
-- Lighthouse 13 mobile: 100 Performance / 100 Accessibility / 100 Best
-  Practices / 100 SEO; LCP 1.53 s, TBT 88 ms, CLS 0, 137,070 B transferred.
+All available general gates passed: 11 Rust tests, 4 Vitest tests, and 16
+Playwright tests passed; 2 viewport-inapplicable Playwright cases skipped. The
+build produced `dist/bin/mcw` and `dist/site/`. Live `verify-url.sh`, axe checks,
+same-origin request interception, and offline replay also passed. These results
+do not replace the missing claim registry/tests.
 
-## Open defects and next action
-
-- **High — MCW-V004:**
-  `GET https://api.sociobot.in/api/v1/products/migration-commit-witness/checkout`
-  returns `404 {"error":"enabled factory product","status":404}`. Factory
-  billing automation must register/enable the product and test the complete
-  purchase/return/unlock/download flow.
-- **Medium — MCW-V008:** footer `/terms/` target is 42.15625 px wide. Increase it
-  to at least 44 px and rerun desktop/mobile geometry checks.
-
-No product code was modified during verification. Do not publish from this
-worker; the factory owns registry credentials. Package readiness command:
-`cargo package --locked`.
+Review-only temporary evidence was written under `/tmp` and is not part of the
+commit. Product code and deploy/infra were left untouched.
