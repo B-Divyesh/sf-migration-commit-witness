@@ -7,8 +7,9 @@ site, Rust CLI, recorded demo, and free MIT scope remain intact. This round
 repairs the mobile sandbox boundary and closes every remaining or reopened
 claim gap with a tagged, observable test. Local visual evidence is
 `.factory/evidence/polish-3-home-desktop.png` and
-`.factory/evidence/polish-3-demo-phone.png`. Live verification is recorded in
-the final handoff after deployment.
+`.factory/evidence/polish-3-demo-phone.png`. Live cold-load screenshots,
+route checks, axe coverage, and Lighthouse evidence are recorded in
+`.factory/handoff.md`.
 
 ## Round 3 findings
 
