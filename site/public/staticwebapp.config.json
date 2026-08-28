@@ -26,6 +26,10 @@
       "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
     },
     {
+      "route": "/mcw-demo-recording.svg",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+    },
+    {
       "route": "/sw.js",
       "headers": {
         "Cache-Control": "no-cache"

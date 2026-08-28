@@ -1,5 +1,19 @@
 [
   {
+    "id": "terminal-recording",
+    "claim": "The landing page includes a self-hosted terminal recording of mcw demo with its temporary workspace and witness paths.",
+    "where": "landing real sample section",
+    "test": "npm run build && npm run test:e2e -- --grep @claim:terminal-recording",
+    "sandbox": "fresh build runs mcw demo to generate the SVG; browser asserts the local recording and accessible transcript show the partial result and both artifact paths"
+  },
+  {
+    "id": "demo-first-result",
+    "claim": "The phone demo opens with the partial-commit verdict, 1 of 2 required tables, and rollback restoration visible without scrolling.",
+    "where": "demo",
+    "test": "npm run build:site && npm run test:e2e -- --grep @claim:demo-first-result",
+    "sandbox": "fresh 390×844 browser context enters ?demo=1 and measures the initial result elements in the viewport"
+  },
+  {
     "id": "demo-isolation",
     "claim": "mcw demo creates and uses a separate sample workspace without writing to the caller directory.",
     "where": "landing, demo, README",

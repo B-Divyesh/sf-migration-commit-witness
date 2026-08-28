@@ -96,3 +96,10 @@ The 1200×630 `share.webp` and 180×180 `apple-touch-icon.png` are local crops o
 that same original image, made with ImageMagick. They introduce no new source
 material. Round 1 keeps the concrete-and-moss direction, while reducing the
 mobile hero to the job, sample action, and three facts before any artwork.
+
+Round 2 adds `site/public/mcw-demo-recording.svg`. It is not stock imagery: the
+local `site/generate-demo-recording.mjs` script runs the bundled `mcw demo`,
+replaces its random temporary folder with `/tmp/mcw-demo-<run>`, and lays the
+real terminal lines onto the same soot, moss, amber, and rust evidence surface.
+The full HTML transcript remains available beside the SVG, so terminal text is
+not accessible only as pixels.

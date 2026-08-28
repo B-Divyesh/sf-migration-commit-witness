@@ -30,6 +30,9 @@ Audited 2026-08-28. Counts use whitespace-separated words. Code samples, navigat
 | 5 | It also requires `--confirm-test-database`. |
 | 9 | Save migration and rollback results with each release. |
 | 5 | Built by Param Factory. |
+| 8 | This self-hosted terminal recording comes from `mcw demo`. |
+| 9 | Run the same sample locally in one command. |
+| 20 | It creates a separate temporary folder, detects one of two required tables, restores the starting checks, and writes both witness files. |
 
 No landing sentence exceeds 22 words. No sentence contains a banned marketing word.
 
@@ -38,6 +41,16 @@ No landing sentence exceeds 22 words. No sentence contains a banned marketing wo
 All headings make sense without their section body. The primary action is “Try it with sample data.” Other actions name their result: “Install the CLI,” “Open the sample result,” “Copy install command,” and “Read the config reference.”
 
 The former metaphor, jargon, ambiguous buttons, paid language, and unavailable checkout copy are absent.
+
+## Demo-page sentences added in round 2
+
+| Words | Sentence |
+| ---: | --- |
+| 4 | The command returned 0. |
+| 15 | The saved witness failed the required-tables check, then rollback restored the starting value. |
+| 18 | The real CLI created one table, detected the missing table, and restored the starting checks with its configured rollback. |
+
+No added sentence exceeds 22 words or uses a banned word.
 
 ## README
 
@@ -55,4 +68,3 @@ No README sentence contains a banned marketing word.
 | Query plus expected result | check |
 | `mcw.toml` | config file |
 | Shipped try-out | sample or demo |
-

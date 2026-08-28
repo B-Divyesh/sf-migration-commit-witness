@@ -1,1 +1,1 @@
-Prove what a SQL migration committed and rolled back before release.
+Prove SQL migration commits and rollbacks before release.

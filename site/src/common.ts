@@ -1,6 +1,6 @@
 import './styles.css';
 
-const BUILD_ID = '0.1.1+polish.1';
+const BUILD_ID = '0.1.1+polish.2';
 
 export function startCommon(): void {
   document.querySelectorAll<HTMLElement>('[data-build]').forEach((node) => { node.textContent = BUILD_ID; });

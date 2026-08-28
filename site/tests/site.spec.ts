@@ -17,6 +17,19 @@ test('home first screen names the job, audience, and sample action', async ({ pa
   expect(box && box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
 });
 
+test('@claim:terminal-recording landing includes a self-hosted recording of the CLI sample', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response?.status()).toBe(200);
+  const recording = page.locator('.terminal-recording');
+  await expect(recording.getByRole('img', { name: /Terminal recording of mcw demo/ })).toHaveAttribute('src', '/mcw-demo-recording.svg');
+  await expect(recording).toContainText('partial commit');
+  await expect(recording).toContainText('witness/witness.json');
+  await expect(recording).toContainText('witness/witness.md');
+  const recordingResponse = await page.request.get('/mcw-demo-recording.svg');
+  expect(recordingResponse.status()).toBe(200);
+  expect(await recordingResponse.text()).toContain('rollback restored the starting checks');
+});
+
 test('first home load stays same-origin and writes no browser data', async ({ page }) => {
   const origins = new Set<string>();
   page.on('request', (request) => origins.add(new URL(request.url()).origin));
@@ -138,6 +151,18 @@ test('mobile pages have no document overflow and retain the full demo controls',
   await page.goto('/demo/');
   await expect(page.getByRole('button', { name: 'Reset demo' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Start for real' })).toBeVisible();
+});
+
+test('@claim:demo-first-result phone demo shows a real result in the first viewport', async ({ page }) => {
+  test.skip(page.viewportSize()?.width !== 390, 'mobile project only');
+  await page.goto('/?demo=1');
+  const title = page.getByRole('heading', { level: 1, name: 'Partial commit detected' });
+  const tables = page.getByText('1 / 2', { exact: true }).first();
+  const rollback = page.getByText('0 / 2 restored', { exact: true });
+  for (const item of [title, tables, rollback]) {
+    const box = await item.boundingBox();
+    expect(box && box.y >= 0 && box.y + box.height <= page.viewportSize()!.height).toBeTruthy();
+  }
 });
 
 test('reduced motion removes meaningful transitions', async ({ page }) => {

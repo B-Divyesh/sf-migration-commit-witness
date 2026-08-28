@@ -12,6 +12,7 @@ describe('Azure Static Web Apps response policy', () => {
 
     expect(route('/assets/*')).toBe('public, max-age=31536000, immutable');
     expect(route('/witness-core.webp')).toBe('public, max-age=31536000, immutable');
+    expect(route('/mcw-demo-recording.svg')).toBe('public, max-age=31536000, immutable');
     expect(route('/sw.js')).toBe('no-cache');
     expect(config.globalHeaders['Content-Security-Policy']).toContain("default-src 'self'");
     expect(config.globalHeaders['Permissions-Policy']).toContain('payment=()');
