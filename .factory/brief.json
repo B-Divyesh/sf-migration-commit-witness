@@ -1,0 +1,15 @@
+{
+  "slug": "migration-commit-witness",
+  "title": "Migration Commit Witness",
+  "territory": "devtools-data",
+  "user": "Backend teams reviewing SQL migrations who need a concrete record of what committed, what rolled back, and which rollback claim was actually exercised before production.",
+  "smallest_useful_product": "A CI CLI that runs an existing migration command against a disposable database, snapshots selected schema/data invariants before and after commit, optionally runs a supplied rollback, and emits a signed Markdown/JSON witness.",
+  "artifact_class": "cli",
+  "monetization": "one-time",
+  "constraints": [
+    "Only use ephemeral/test credentials",
+    "Require explicit rollback scripts",
+    "Label database dialect behavior",
+    "Never auto-run rollback in production"
+  ]
+}
