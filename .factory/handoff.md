@@ -1,87 +1,52 @@
-# Migration Commit Witness — polish round 1 handoff
+# Review 2 handoff — Migration Commit Witness
 
 ## Status
 
-Complete. Every finding in `.factory/review-1.md` and the earlier verification reports is closed. The repaired site is live at <https://migration-commit-witness.sociobot.in>.
+Review completed and committed without product-code changes. Verdict: **FAIL**.
 
-Implementation commits:
+## What was reviewed
 
-- `bc195d2` — real CLI/browser demo, copy, routes, metadata, responsive UI, and claim suite
-- `2d2a20c` — explicit query-error claim coverage
+- Fresh live browser contexts at 390×844 and 1440×900, including a cold first
+  screen, demo entry, reset, storage namespace, offline reload, routes, links,
+  metadata, focus/back navigation, and 404.
+- A fresh local clone at `6d08e132fb13a6689283fe46992a6059d61fa337`.
+- All 24 declared claim entries using their exact clean-clone commands.
+- `npm test` / clean-clone E2E (23 passed, one expected viewport skip),
+  `npm run lint`, and `npm run build`.
+- Live factory URL verification and independent Playwright axe scans at desktop
+  and mobile.
 
-The unavailable paid offer was removed, as required by BLOCKING-5’s fallback. No checkout or license flow is advertised.
+## Result
 
-## What changed
+All claimed behavior, privacy isolation, CLI temp-directory behavior,
+accessibility baseline, and site structure passed. The review records two
+blocking demo presentation gaps in `.factory/review-2.md`; the first reopens
+review 1's **BLOCKING-2** because its first-phone-view requirement remains
+half-fixed:
 
-- Added `mcw demo` with an opinionated SQLite fixture under `examples/demo/`.
-- The demo creates one new temporary workspace and runs the real witness path.
-- Added `/demo/` with the required persistent banner, reset, and start-real controls.
-- Added `.factory/claims.json` with 24 claims and exactly one test tag per id.
-- Rewrote the first screen and README in plain words.
-- Added `.factory/copy-audit.md`, `.factory/demo.md`, and the catalog description.
-- Added real multi-page routes, distinct titles/canonicals, social metadata, icons, and a 404 response.
-- Unified navigation/footer structure and added build identity.
-- Added route focus, announcements, Back/Forward coverage, touch-target checks, and mobile overflow checks.
-- Preserved the concrete-and-moss visual system. Social and touch assets derive from the original witnessed artwork.
-- Removed paid UI and browser license code because the production checkout is unavailable.
+1. On 390×844, `/demo/` shows only introduction copy; the first real sample
+   verdict starts below the fold.
+2. The CLI landing page has no self-hosted terminal recording of a real
+   `mcw demo` run, as required for a CLI demo.
 
-The exhaustive finding map is in `.factory/polish-1.md`.
-
-## Verification
-
-Claim-audit clone: `/tmp/mcw-polish-final-CCB4UL/repo` at commit `e78f18b`.
-Final full-suite clone: `/tmp/mcw-final-audit-1f6Yn8/repo` at commit `7cfb30c`.
+## How to verify
 
 ```sh
 npm ci
 npm test
 npm run lint
 npm run build
-cargo package --locked
+cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record
 ```
 
-Results:
+For live behavior, open <https://migration-commit-witness.sociobot.in/demo/>
+at 390×844 and verify the sample output's current first visible position. Run
+`mcw demo` from an empty temporary directory to verify caller-directory
+isolation.
 
-- npm audit: 0 vulnerabilities.
-- Rust: 3 unit, 2 claim-integration, and 8 CLI integration tests passed.
-- Vitest: 1 deployment/config test passed.
-- Playwright: 23 applicable desktop/mobile tests passed; one viewport-only case skipped.
-- Clippy passed with warnings denied.
-- Build produced `dist/bin/mcw` and `dist/site/`.
-- Cargo packaged and verified 57 files.
-- Every distinct `test` command in `.factory/claims.json` passed in the clean clone.
-- Claim tag audit found exactly one `@claim:<id>` test tag for every registry id.
+## Next steps
 
-Live checks after deployment:
-
-- `/`, `/demo/`, `/privacy/`, and `/terms/`: HTTP 200.
-- `/does-not-exist`: HTTP 404 with the designed page.
-- Factory URL verifier: home and demo passed with zero console errors.
-- Full Playwright suite against the live origin: 23 passed, one viewport-only skip.
-- Axe integration: zero serious or critical findings across all routes at desktop and 390 px.
-- Offline demo reload/reset, same-origin request policy, demo namespace, focus, Back/Forward, reduced motion, and 44 px targets passed.
-- Live Lighthouse mobile: 100 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.
-- Lighthouse metrics: FCP 0.9 s, LCP 1.5 s, TBT 0 ms, CLS 0.
-- Initial transfer: 132,746 bytes.
-- JS: under 5 KB uncompressed by route. CSS: 15,020 bytes. Fonts: 0 bytes.
-- Immutable asset caching and `no-cache` service-worker headers were confirmed live.
-
-Screenshots are stored at:
-
-- `.factory/evidence/live-home.webp`
-- `.factory/evidence/live-home-mobile.webp`
-- `.factory/evidence/live-demo-mobile.webp`
-
-## Run the product
-
-```sh
-cargo run -- demo
-cargo run -- witness --config mcw.toml --output witness \
-  --confirm-test-database --exercise-rollback
-```
-
-The browser demo is <https://migration-commit-witness.sociobot.in/demo/>.
-
-## Known gaps
-
-None within the reviewed product scope. Registry publishing remains factory-owned and was not performed.
+Move an actual initial witness result into the demo's first phone viewport.
+Add a self-hosted, accessible terminal recording generated from `mcw demo` to
+the landing page and test its values/viewport position. Then rerun this review
+from a fresh browser context and clean clone.
