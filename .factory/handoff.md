@@ -64,7 +64,7 @@ cargo package --locked
 - `npm run build` produced `dist/bin/mcw` and `dist/site/`. Initial assets are
   6,713 B primary JS + 711 B helper JS, 16,252 B CSS, no webfont payload, and a
   122,462 B hero WebP.
-- `cargo package --locked` verified 40 files at 338.3 KiB unpacked / 184.1 KiB
+- `cargo package --locked` verified 40 files at 341.5 KiB unpacked / 185.3 KiB
   compressed. A clean consumer root installed the packaged crate; `mcw
   --version` returned `0.1.1` and `mcw --help` was complete/non-interactive.
 - PostgreSQL 16.15 real-server exercise using
@@ -85,7 +85,7 @@ with `/opt/fleet/lib/deploy-static.sh` to
 <https://migration-commit-witness.sociobot.in>.
 
 - 13 public artifact SHA-256 values matched the local production build.
-- Live `verify-url.sh` returned HTTP 200 in 830 ms with zero console errors.
+- Live `verify-url.sh` returned HTTP 200 in 620 ms with zero console errors.
 - The complete Playwright matrix passed against the live origin: desktop and
   390 px semantics, axe serious/critical = 0, keyboard/skip focus, no overflow,
   touch sizes, privacy/no default storage, license return and daily invalid
@@ -94,7 +94,7 @@ with `/opt/fleet/lib/deploy-static.sh` to
   `public, max-age=31536000, immutable`; `/sw.js` returns `no-cache`; CSP,
   Permissions-Policy, Referrer-Policy, and `nosniff` are present.
 - Live Lighthouse 13 mobile: Performance 100, Accessibility 100, Best
-  Practices 100, SEO 100; FCP 0.9 s, LCP 1.5 s, TBT 60 ms, CLS 0, 134 KiB.
+  Practices 100, SEO 100; FCP 0.9 s, LCP 1.5 s, TBT 0 ms, CLS 0, 134 KiB.
 - The live invalid-license endpoint returns HTTP 200, `Cache-Control: no-store`,
   and the documented JSON shape.
 
