@@ -1,52 +1,62 @@
-# Review 2 handoff — Migration Commit Witness
+# Polish round 2 handoff — Migration Commit Witness
 
 ## Status
 
-Review completed and committed without product-code changes. Verdict: **FAIL**.
+Complete. Repair commit: `b8a658b51e238131fd9a9038713ffb0d958ea391`.
+It is pushed to `origin/main` and deployed to
+<https://migration-commit-witness.sociobot.in>.
 
-## What was reviewed
+## What changed
 
-- Fresh live browser contexts at 390×844 and 1440×900, including a cold first
-  screen, demo entry, reset, storage namespace, offline reload, routes, links,
-  metadata, focus/back navigation, and 404.
-- A fresh local clone at `6d08e132fb13a6689283fe46992a6059d61fa337`.
-- All 24 declared claim entries using their exact clean-clone commands.
-- `npm test` / clean-clone E2E (23 passed, one expected viewport skip),
-  `npm run lint`, and `npm run build`.
-- Live factory URL verification and independent Playwright axe scans at desktop
-  and mobile.
+- `/demo/` now opens with a compact, real partial-commit result. At 390×844 it
+  shows the verdict, `1 / 2` required tables, the missing `audit_log` check,
+  and restored `0 / 2` before scrolling. The isolated banner, reset, and
+  start-real behavior remain intact.
+- The landing page now has a self-hosted SVG terminal recording generated from
+  a fresh `mcw demo` run. Its HTML transcript exposes the workspace, partial
+  result, rollback restoration, and both witness paths without relying on the
+  image alone.
+- Added two tested claims (`demo-first-result`, `terminal-recording`), immutable
+  caching for the recording, mobile/live screenshots, updated demo/design/copy
+  records, and a verb-first catalog description.
 
-## Result
+## Verification evidence
 
-All claimed behavior, privacy isolation, CLI temp-directory behavior,
-accessibility baseline, and site structure passed. The review records two
-blocking demo presentation gaps in `.factory/review-2.md`; the first reopens
-review 1's **BLOCKING-2** because its first-phone-view requirement remains
-half-fixed:
+- Clean clone: `/tmp/mcw-polish-2-clean-vgH9aC/repo` at repair commit `b8a658b`.
+  `npm ci`, `npm test`, `npm run lint`, `npm run build`, and every distinct
+  exact command from all 26 `.factory/claims.json` entries passed.
+- Local suite: 13 Rust tests, 1 Vitest test, and 27 Playwright tests passed;
+  one desktop-inapplicable mobile viewport test was skipped. Playwright axe
+  found zero serious or critical violations on every route at desktop and
+  390×844.
+- Packaging: `cargo package --locked` packaged and verified 68 files.
+- Deployment: `npm ci && npm run build:site` followed by
+  `/opt/fleet/lib/deploy-static.sh migration-commit-witness dist/site` passed.
+- Live cold checks: `/` and `/demo/` return 200; `/does-not-exist` returns 404;
+  `/mcw-demo-recording.svg` returns 200. Both `verify-url.sh` reports had zero
+  console errors, one title/h1/main, `lang=en`, and no missing image alt.
+- Fresh live 390×844 browser check placed the demo h1 at y=213.8, result strip
+  at y=300.3, and result note at y=431.7; all are fully visible. Live axe found
+  zero serious or critical issues on home, demo, privacy, terms, and 404.
+  Evidence: [live demo phone](evidence/live-polish-2-demo-phone.png) and
+  [recording](evidence/polish-2-home-recording.png).
+- Live Lighthouse mobile: Performance 100, Accessibility 100, Best Practices
+  100, SEO 100; FCP 1.0 s, LCP 1.5 s, CLS 0.
 
-1. On 390×844, `/demo/` shows only introduction copy; the first real sample
-   verdict starts below the fold.
-2. The CLI landing page has no self-hosted terminal recording of a real
-   `mcw demo` run, as required for a CLI demo.
-
-## How to verify
+## Run locally
 
 ```sh
 npm ci
 npm test
 npm run lint
 npm run build
-cargo test --test claims demo_runs_in_one_isolated_directory_and_matches_the_browser_record
+cargo package --locked
 ```
 
-For live behavior, open <https://migration-commit-witness.sociobot.in/demo/>
-at 390×844 and verify the sample output's current first visible position. Run
-`mcw demo` from an empty temporary directory to verify caller-directory
-isolation.
+`npm run generate:demo-recording` regenerates the committed recording from the
+release binary. Run `mcw demo` from an empty directory to inspect the isolated
+CLI sample.
 
-## Next steps
+## Known gaps
 
-Move an actual initial witness result into the demo's first phone viewport.
-Add a self-hosted, accessible terminal recording generated from `mcw demo` to
-the landing page and test its values/viewport position. Then rerun this review
-from a fresh browser context and clean clone.
+None.
